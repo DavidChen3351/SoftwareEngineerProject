@@ -7,5 +7,6 @@
 - 2023213105 : 231222925 (member)
 - lizexi20050819-hue: 231221180 (member)
 - xinpengtian923-cell：231221135（member)
+- Spica1225：231220611(member)
 - {github user name}: {qmid} (lead/member)
-Spica1225 231220611
+
