@@ -1,0 +1,4 @@
+target/          # 编译生成的文件
+.idea/           # IDEA 配置
+*.iml            # IDEA 模块文件
+.mvn/
