@@ -1,8 +1,8 @@
 package com.bupt.ta.util;
 
-import com.buptta.model.User;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
+import com.bupt.ta.model.User;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 
 public class SessionUtil {
     private static final String USER_SESSION_KEY = "currentUser";
