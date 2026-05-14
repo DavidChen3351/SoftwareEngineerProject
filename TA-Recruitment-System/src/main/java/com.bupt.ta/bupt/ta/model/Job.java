@@ -13,12 +13,14 @@ public class Job {
     private String deadline;
     private String teacherId;
     private String teacherName;
+    /** When false, teacher has paused listing; TA cannot apply even if deadline and slots allow. */
+    private boolean acceptingApplications = true;
 
     public Job() {
     }
 
     public Job(String id, String title, String courseName, String workload, int totalSlots, int filledSlots,
-               String deadline, String teacherId, String teacherName) {
+               String deadline, String teacherId, String teacherName, boolean acceptingApplications) {
         this.id = id;
         this.title = title;
         this.courseName = courseName;
@@ -28,9 +30,17 @@ public class Job {
         this.deadline = deadline;
         this.teacherId = teacherId;
         this.teacherName = teacherName;
+        this.acceptingApplications = acceptingApplications;
     }
 
     public static Job fromMap(Map<String, Object> map) {
+        boolean accepting = true;
+        Object acceptingRaw = map.get("acceptingApplications");
+        if (acceptingRaw instanceof Boolean) {
+            accepting = ((Boolean) acceptingRaw).booleanValue();
+        } else if (acceptingRaw != null) {
+            accepting = Boolean.parseBoolean(String.valueOf(acceptingRaw));
+        }
         return new Job(
                 String.valueOf(map.get("id")),
                 String.valueOf(map.get("title")),
@@ -40,7 +50,8 @@ public class Job {
                 ((Number) map.get("filledSlots")).intValue(),
                 String.valueOf(map.get("deadline")),
                 String.valueOf(map.get("teacherId")),
-                String.valueOf(map.get("teacherName"))
+                String.valueOf(map.get("teacherName")),
+                accepting
         );
     }
 
@@ -55,6 +66,7 @@ public class Job {
         map.put("deadline", deadline);
         map.put("teacherId", teacherId);
         map.put("teacherName", teacherName);
+        map.put("acceptingApplications", acceptingApplications);
         return map;
     }
 
@@ -132,5 +144,13 @@ public class Job {
 
     public void setTeacherName(String teacherName) {
         this.teacherName = teacherName;
+    }
+
+    public boolean isAcceptingApplications() {
+        return acceptingApplications;
+    }
+
+    public void setAcceptingApplications(boolean acceptingApplications) {
+        this.acceptingApplications = acceptingApplications;
     }
 }

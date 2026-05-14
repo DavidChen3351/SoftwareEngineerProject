@@ -1,5 +1,7 @@
 package com.bupt.ta.util;
 
+import com.bupt.ta.model.Job;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -25,6 +27,13 @@ public final class ValidationUtil {
         } catch (DateTimeParseException exception) {
             return false;
         }
+    }
+
+    /** TA may apply only when the teacher has not paused listing, deadline is active, and seats remain. */
+    public static boolean isJobOpenForApplications(Job job) {
+        return job.isAcceptingApplications()
+                && isActiveDeadline(job.getDeadline())
+                && job.getRemainingSlots() > 0;
     }
 
     public static String nowStamp() {

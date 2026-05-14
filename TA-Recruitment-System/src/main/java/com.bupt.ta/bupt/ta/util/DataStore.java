@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -113,12 +114,35 @@ public final class DataStore {
     }
 
     public static boolean hasApplied(ServletContext context, String jobId, String studentId) {
+        return findApplicationByJobAndStudent(context, jobId, studentId) != null;
+    }
+
+    public static synchronized ApplicationRecord findApplicationByJobAndStudent(ServletContext context, String jobId,
+                                                                              String studentId) {
         for (ApplicationRecord application : loadApplications(context)) {
             if (application.getJobId().equals(jobId) && application.getStudentId().equals(studentId)) {
-                return true;
+                return application;
             }
         }
-        return false;
+        return null;
+    }
+
+    public static synchronized List<ApplicationRecord> findApplicationsByStudent(ServletContext context,
+                                                                                  String studentId) {
+        List<ApplicationRecord> result = new ArrayList<ApplicationRecord>();
+        for (ApplicationRecord application : loadApplications(context)) {
+            if (studentId != null && studentId.equals(application.getStudentId())) {
+                result.add(application);
+            }
+        }
+        result.sort(new Comparator<ApplicationRecord>() {
+            public int compare(ApplicationRecord left, ApplicationRecord right) {
+                String a = left.getSubmittedAt() == null ? "" : left.getSubmittedAt();
+                String b = right.getSubmittedAt() == null ? "" : right.getSubmittedAt();
+                return b.compareTo(a);
+            }
+        });
+        return result;
     }
 
     public static boolean teacherHasActiveRecruitment(ServletContext context, String teacherId) {
