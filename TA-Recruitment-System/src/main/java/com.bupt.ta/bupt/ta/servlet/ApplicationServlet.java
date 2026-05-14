@@ -33,7 +33,7 @@ public class ApplicationServlet extends HttpServlet {
 
         String jobId = request.getParameter("jobId");
         Job job = DataStore.findJob(getServletContext(), jobId);
-        if (job == null || !ValidationUtil.isActiveDeadline(job.getDeadline()) || job.getRemainingSlots() <= 0) {
+        if (job == null || !ValidationUtil.isJobOpenForApplications(job)) {
             response.sendRedirect(request.getContextPath() + "/ta/jobs.jsp?error=This+position+is+no+longer+available");
             return;
         }

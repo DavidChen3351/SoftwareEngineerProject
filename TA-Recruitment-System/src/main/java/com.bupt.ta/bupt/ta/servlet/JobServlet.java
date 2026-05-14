@@ -38,7 +38,7 @@ public class JobServlet extends HttpServlet {
 
         List<Job> jobs = DataStore.loadJobs(getServletContext());
         jobs.add(new Job("J" + ValidationUtil.nowStamp(), title, courseName, workload, totalSlots, 0, deadline,
-                teacher.getId(), teacher.getName()));
+                teacher.getId(), teacher.getName(), true));
         DataStore.saveJobs(getServletContext(), jobs);
         response.sendRedirect(request.getContextPath() + "/teacher/dashboard.jsp?success=Position+published");
     }
