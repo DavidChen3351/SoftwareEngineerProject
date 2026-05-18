@@ -1,3 +1,4 @@
 # JetBrains / IntelliJ IDEA
 .idea/
 *.iml
+TA-Recruitment-System/target/ta-recruitment.war
