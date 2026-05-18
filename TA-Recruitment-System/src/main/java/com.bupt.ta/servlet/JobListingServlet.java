@@ -13,8 +13,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 
-@WebServlet("/teacher/jobs/quota")
-public class JobQuotaServlet extends HttpServlet {
+@WebServlet("/teacher/jobs/listing")
+public class JobListingServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         User teacher = AuthUtil.currentUser(request);
@@ -24,19 +24,12 @@ public class JobQuotaServlet extends HttpServlet {
         }
 
         String jobId = request.getParameter("jobId");
-        String totalSlotsParam = request.getParameter("totalSlots");
-        if (jobId == null || jobId.trim().isEmpty() || totalSlotsParam == null || totalSlotsParam.trim().isEmpty()) {
-            response.sendRedirect(request.getContextPath() + "/teacher/dashboard.jsp?error=Invalid+quota+request");
+        String acceptingParam = request.getParameter("accepting");
+        if (jobId == null || jobId.trim().isEmpty() || acceptingParam == null) {
+            response.sendRedirect(request.getContextPath() + "/teacher/dashboard.jsp?error=Invalid+request");
             return;
         }
-
-        int newTotal;
-        try {
-            newTotal = Integer.parseInt(totalSlotsParam.trim());
-        } catch (NumberFormatException exception) {
-            response.sendRedirect(request.getContextPath() + "/teacher/dashboard.jsp?error=Quota+must+be+a+number");
-            return;
-        }
+        boolean accepting = "true".equalsIgnoreCase(acceptingParam.trim());
 
         List<Job> jobs = DataStore.loadJobs(getServletContext());
         Job target = null;
@@ -50,13 +43,16 @@ public class JobQuotaServlet extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/teacher/dashboard.jsp?error=Unauthorized+or+unknown+position");
             return;
         }
-        if (newTotal < 1 || newTotal < target.getFilledSlots()) {
-            response.sendRedirect(request.getContextPath() + "/teacher/dashboard.jsp?error=Quota+must+be+at+least+the+number+already+filled");
+        if (target.isCancelled()) {
+            response.sendRedirect(request.getContextPath() + "/teacher/dashboard.jsp?error=Cancelled+positions+cannot+be+paused+or+resumed");
             return;
         }
 
-        target.setTotalSlots(newTotal);
+        target.setAcceptingApplications(accepting);
         DataStore.saveJobs(getServletContext(), jobs);
-        response.sendRedirect(request.getContextPath() + "/teacher/dashboard.jsp?success=Position+quota+updated");
+        String message = accepting
+                ? "Applications+resumed+for+this+position"
+                : "New+applications+paused+position+still+visible+to+TAs";
+        response.sendRedirect(request.getContextPath() + "/teacher/dashboard.jsp?success=" + message);
     }
 }

@@ -3,6 +3,9 @@
 <%@ page import="com.bupt.ta.util.DataStore" %>
 <%@ page import="java.util.List" %>
 <%
+    response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+    response.setHeader("Pragma", "no-cache");
+    response.setDateHeader("Expires", 0);
     User currentUser = (User) session.getAttribute("currentUser");
     if (currentUser == null || !"ADMIN".equals(currentUser.getRole())) {
         response.sendRedirect(request.getContextPath() + "/login.jsp");
@@ -90,7 +93,6 @@
                 <td>
                     <form action="<%=request.getContextPath()%>/admin/users/update" method="post" class="admin-form">
                         <input type="hidden" name="userId" value="<%=user.getId()%>">
-                        <input type="hidden" name="action" value="update">
                         <select name="role">
                             <option value="TA" <%="TA".equals(user.getRole()) ? "selected" : ""%>>TA</option>
                             <option value="TEACHER" <%="TEACHER".equals(user.getRole()) ? "selected" : ""%>>Teacher</option>
@@ -102,7 +104,7 @@
                         </select>
                         <input type="text" name="resetPassword" placeholder="New password (optional)">
                         <div class="admin-actions">
-                            <button type="submit" class="primary-btn small">Save</button>
+                            <button type="submit" name="action" value="update" class="primary-btn small">Save</button>
                             <% if (deleteBlocked) { %>
                             <button type="button" class="disabled-btn small" disabled>Delete</button>
                             <% } else { %>

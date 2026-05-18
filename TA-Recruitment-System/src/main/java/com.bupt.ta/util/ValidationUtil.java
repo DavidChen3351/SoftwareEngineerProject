@@ -29,11 +29,28 @@ public final class ValidationUtil {
         }
     }
 
-    /** TA may apply only when the teacher has not paused listing, deadline is active, and seats remain. */
+    /**
+     * Display / apply eligibility from deadline and vacancy.
+     * Closed if past deadline; otherwise No Vacancy when no seats remain; else Available.
+     */
+    public static PositionStatus getPositionStatus(Job job) {
+        if (job.isCancelled()) {
+            return PositionStatus.CLOSED;
+        }
+        if (!isActiveDeadline(job.getDeadline())) {
+            return PositionStatus.CLOSED;
+        }
+        if (job.getRemainingSlots() <= 0) {
+            return PositionStatus.NO_VACANCY;
+        }
+        return PositionStatus.AVAILABLE;
+    }
+
+    /** TA may apply only when the position is not cancelled, not paused, and still available. */
     public static boolean isJobOpenForApplications(Job job) {
-        return job.isAcceptingApplications()
-                && isActiveDeadline(job.getDeadline())
-                && job.getRemainingSlots() > 0;
+        return !job.isCancelled()
+                && job.isAcceptingApplications()
+                && getPositionStatus(job) == PositionStatus.AVAILABLE;
     }
 
     public static String nowStamp() {
