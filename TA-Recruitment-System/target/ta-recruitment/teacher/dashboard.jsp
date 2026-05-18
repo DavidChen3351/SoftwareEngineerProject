@@ -90,7 +90,10 @@
         </div>
         <div class="table-card">
             <h3>My positions</h3>
-            <p class="subtle" style="margin-top: 0;">Pause or resume TA applications, or raise total slots when a post is full but you still need assistants.</p>
+            <p class="subtle" style="margin-top: 0;">
+                <strong>Pause applications</strong> — position stays on the TA list, but no new applications.
+                <strong>Cancel position</strong> — withdraws the post and removes it from the TA portal (existing applications remain for your review).
+            </p>
             <table>
                 <thead>
                 <tr>
@@ -98,49 +101,67 @@
                     <th>Course</th>
                     <th>Quota</th>
                     <th>Deadline</th>
-                    <th>TA portal</th>
-                    <th>Manage</th>
+                    <th>Status</th>
+                    <th>Actions</th>
                 </tr>
                 </thead>
                 <tbody>
                 <% for (Job job : jobs) {
-                    String taPortalHint;
-                    if (ValidationUtil.isJobOpenForApplications(job)) {
-                        taPortalHint = "Open — TAs can apply";
+                    String statusLabel;
+                    String statusClass;
+                    if (job.isCancelled()) {
+                        statusLabel = "Cancelled";
+                        statusClass = "position-status cancelled";
+                    } else if (ValidationUtil.isJobOpenForApplications(job)) {
+                        statusLabel = "Open";
+                        statusClass = "position-status available";
                     } else if (!job.isAcceptingApplications()) {
-                        taPortalHint = "Paused — listing hidden from new applications";
+                        statusLabel = "Paused";
+                        statusClass = "position-status paused";
                     } else if (!ValidationUtil.isActiveDeadline(job.getDeadline())) {
-                        taPortalHint = "Closed — past deadline";
+                        statusLabel = "Closed";
+                        statusClass = "position-status closed";
                     } else if (job.getRemainingSlots() <= 0) {
-                        taPortalHint = "Closed — no vacancies (raise quota to reopen)";
+                        statusLabel = "Full";
+                        statusClass = "position-status no-vacancy";
                     } else {
-                        taPortalHint = "Closed";
+                        statusLabel = "Closed";
+                        statusClass = "position-status closed";
                     }
                 %>
-                <tr>
+                <tr class="<%=job.isCancelled() ? "teacher-job-row-cancelled" : ""%>">
                     <td><%=job.getTitle()%></td>
                     <td><%=job.getCourseName()%></td>
                     <td><%=job.getFilledSlots()%> / <%=job.getTotalSlots()%></td>
                     <td><%=job.getDeadline().replace("T", " ")%></td>
-                    <td><span class="subtle"><%=taPortalHint%></span></td>
+                    <td><span class="<%=statusClass%>"><%=statusLabel%></span></td>
                     <td>
                         <div class="teacher-job-manage">
+                            <% if (!job.isCancelled()) { %>
                             <form class="inline-form" method="post" action="<%=request.getContextPath()%>/teacher/jobs/listing">
                                 <input type="hidden" name="jobId" value="<%=job.getId()%>">
                                 <% if (job.isAcceptingApplications()) { %>
                                 <input type="hidden" name="accepting" value="false">
-                                <button type="submit" class="secondary-btn small">Pause listing</button>
+                                <button type="submit" class="secondary-btn small" title="Stop new applications; position still visible to TAs">Pause applications</button>
                                 <% } else { %>
                                 <input type="hidden" name="accepting" value="true">
-                                <button type="submit" class="primary-btn small">Resume listing</button>
+                                <button type="submit" class="primary-btn small" title="Allow TAs to apply again">Resume applications</button>
                                 <% } %>
                             </form>
                             <form class="inline-form teacher-quota-form" method="post" action="<%=request.getContextPath()%>/teacher/jobs/quota">
                                 <input type="hidden" name="jobId" value="<%=job.getId()%>">
                                 <span class="subtle">Total slots</span>
                                 <input type="number" name="totalSlots" min="<%=job.getFilledSlots()%>" value="<%=job.getTotalSlots()%>" class="quota-input" title="Cannot be less than already filled">
-                                <button type="submit" class="primary-btn small">Update quota</button>
+                                <button type="submit" class="secondary-btn small">Update quota</button>
                             </form>
+                            <form class="inline-form" method="post" action="<%=request.getContextPath()%>/teacher/jobs/cancel"
+                                  onsubmit="return confirm('Cancel this position? It will be removed from the TA job list. Existing applications stay in your review table.');">
+                                <input type="hidden" name="jobId" value="<%=job.getId()%>">
+                                <button type="submit" class="danger-btn small">Cancel position</button>
+                            </form>
+                            <% } else { %>
+                            <span class="subtle">Withdrawn from TA portal</span>
+                            <% } %>
                         </div>
                     </td>
                 </tr>

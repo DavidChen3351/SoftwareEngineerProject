@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 public final class DataStore {
+    private static final String DATA_ROOT_KEY = "com.bupt.ta.dataRoot";
     private static final String USERS_FILE = "/data/users.json";
     private static final String JOBS_FILE = "/data/jobs.json";
     private static final String APPLICATIONS_FILE = "/data/applications.json";
@@ -147,6 +149,9 @@ public final class DataStore {
 
     public static boolean teacherHasActiveRecruitment(ServletContext context, String teacherId) {
         for (Job job : loadJobs(context)) {
+            if (job.isCancelled()) {
+                continue;
+            }
             if (job.getTeacherId().equals(teacherId)
                     && job.getRemainingSlots() > 0
                     && ValidationUtil.isActiveDeadline(job.getDeadline())) {
@@ -154,6 +159,42 @@ public final class DataStore {
             }
         }
         return false;
+    }
+
+    /** Remove all applications for a TA and realign job filledSlots from ACCEPTED records. */
+    public static synchronized void removeApplicationsForTaUser(ServletContext context, User taUser) {
+        if (taUser == null || !"TA".equals(taUser.getRole())) {
+            return;
+        }
+        String studentId = taUser.getStudentId();
+        String email = taUser.getEmail() == null ? "" : taUser.getEmail().trim();
+        List<ApplicationRecord> applications = loadApplications(context);
+        applications.removeIf(application -> matchesTaUser(application, studentId, email));
+        saveApplications(context, applications);
+        recalculateFilledSlots(context);
+    }
+
+    /** filledSlots = count of ACCEPTED applications per job (capped at totalSlots). */
+    public static synchronized void recalculateFilledSlots(ServletContext context) {
+        List<Job> jobs = loadJobs(context);
+        List<ApplicationRecord> applications = loadApplications(context);
+        for (Job job : jobs) {
+            int accepted = 0;
+            for (ApplicationRecord application : applications) {
+                if (job.getId().equals(application.getJobId()) && "ACCEPTED".equals(application.getStatus())) {
+                    accepted++;
+                }
+            }
+            job.setFilledSlots(Math.min(accepted, job.getTotalSlots()));
+        }
+        saveJobs(context, jobs);
+    }
+
+    private static boolean matchesTaUser(ApplicationRecord application, String studentId, String email) {
+        if (studentId != null && !studentId.isEmpty() && studentId.equals(application.getStudentId())) {
+            return true;
+        }
+        return email != null && !email.isEmpty() && email.equalsIgnoreCase(application.getStudentEmail());
     }
 
     @SuppressWarnings("unchecked")
@@ -188,12 +229,95 @@ public final class DataStore {
         }
     }
 
-    private static Path toPath(ServletContext context, String relativePath) {
-        String realPath = context.getRealPath(relativePath);
+    /**
+     * Persistent data lives outside the WAR so Tomcat redeploy/restart does not reset users.json.
+     * Override with environment variable TA_DATA_DIR if needed.
+     */
+    private static Path dataRoot(ServletContext context) {
+        Object cached = context.getAttribute(DATA_ROOT_KEY);
+        if (cached instanceof Path) {
+            return (Path) cached;
+        }
+        Path root = resolvePersistentRoot();
+        try {
+            ensureDataFiles(context, root);
+        } catch (IOException exception) {
+            throw new IllegalStateException("Failed to initialize data directory " + root, exception);
+        }
+        context.setAttribute(DATA_ROOT_KEY, root);
+        return root;
+    }
+
+    /** Stable path for admin/debug; survives Tomcat restarts (including IntelliJ). */
+    public static synchronized Path getDataDirectory(ServletContext context) {
+        return dataRoot(context);
+    }
+
+    private static Path resolvePersistentRoot() {
+        String override = System.getenv("TA_DATA_DIR");
+        if (override != null && !override.trim().isEmpty()) {
+            return Paths.get(override.trim());
+        }
+        // Do NOT use catalina.base: IntelliJ Tomcat often uses a temp work dir wiped on restart.
+        return Paths.get(System.getProperty("user.home"), ".ta-recruitment", "data");
+    }
+
+    private static void ensureDataFiles(ServletContext context, Path root) throws IOException {
+        Files.createDirectories(root);
+        migrateLegacyIdeaTomcatData(root);
+        seedFileIfMissing(context, root, "users.json");
+        seedFileIfMissing(context, root, "jobs.json");
+        seedFileIfMissing(context, root, "applications.json");
+    }
+
+    /** One-time copy from old catalina.base store if IntelliJ had been using it. */
+    private static void migrateLegacyIdeaTomcatData(Path root) throws IOException {
+        String catalinaBase = System.getProperty("catalina.base");
+        if (catalinaBase == null || catalinaBase.isEmpty()) {
+            return;
+        }
+        Path legacy = Paths.get(catalinaBase, "ta-recruitment-data");
+        if (!Files.isDirectory(legacy)) {
+            return;
+        }
+        for (String fileName : new String[]{"users.json", "jobs.json", "applications.json"}) {
+            Path target = root.resolve(fileName);
+            Path source = legacy.resolve(fileName);
+            if (!Files.exists(target) && Files.exists(source) && Files.size(source) > 2) {
+                Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
+            }
+        }
+    }
+
+    private static void seedFileIfMissing(ServletContext context, Path root, String fileName) throws IOException {
+        Path target = root.resolve(fileName);
+        if (Files.exists(target)) {
+            return;
+        }
+        Path bundled = bundledDataFile(context, fileName);
+        if (bundled != null && Files.exists(bundled) && Files.size(bundled) > 2) {
+            Files.copy(bundled, target, StandardCopyOption.REPLACE_EXISTING);
+            return;
+        }
+        Files.write(target, "[]".getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static Path bundledDataFile(ServletContext context, String fileName) {
+        String realPath = context.getRealPath("/data/" + fileName);
         if (realPath != null) {
             return Paths.get(realPath);
         }
-        return Paths.get(System.getProperty("user.dir"), relativePath.replaceFirst("^/", ""));
+        return null;
+    }
+
+    private static Path toPath(ServletContext context, String relativePath) {
+        String fileName = relativePath;
+        if (fileName.startsWith("/data/")) {
+            fileName = fileName.substring("/data/".length());
+        } else if (fileName.startsWith("/")) {
+            fileName = fileName.substring(1);
+        }
+        return dataRoot(context).resolve(fileName);
     }
 
     private static void ensureFile(Path path) {

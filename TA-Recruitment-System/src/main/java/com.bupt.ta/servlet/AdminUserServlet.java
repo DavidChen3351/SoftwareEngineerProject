@@ -24,7 +24,7 @@ public class AdminUserServlet extends HttpServlet {
             return;
         }
 
-        String action = request.getParameter("action");
+        String action = resolveAction(request);
         if ("createTeacher".equals(action)) {
             createTeacher(request, response);
             return;
@@ -44,27 +44,34 @@ public class AdminUserServlet extends HttpServlet {
             }
         }
         if (target == null) {
-            response.sendRedirect(request.getContextPath() + "/admin/dashboard.jsp?error=User+not+found");
+            redirectDashboard(request, response, "error=User+not+found");
             return;
         }
         if (admin.getId().equals(target.getId()) && "delete".equals(action)) {
-            response.sendRedirect(request.getContextPath() + "/admin/dashboard.jsp?error=You+cannot+delete+your+own+account");
+            redirectDashboard(request, response, "error=You+cannot+delete+your+own+account");
             return;
         }
         if ("delete".equals(action)) {
             if ("TEACHER".equals(target.getRole())
                     && DataStore.teacherHasActiveRecruitment(getServletContext(), target.getId())) {
-                response.sendRedirect(request.getContextPath() + "/admin/dashboard.jsp?error=Teacher+has+active+recruitment");
+                redirectDashboard(request, response, "error=Teacher+has+active+recruitment");
                 return;
             }
-            users.remove(target);
+            if ("TA".equals(target.getRole())) {
+                DataStore.removeApplicationsForTaUser(getServletContext(), target);
+            }
+            boolean removed = users.removeIf(user -> userId.equals(user.getId()));
+            if (!removed) {
+                redirectDashboard(request, response, "error=User+not+found");
+                return;
+            }
             DataStore.saveUsers(getServletContext(), users);
-            response.sendRedirect(request.getContextPath() + "/admin/dashboard.jsp?success=Account+deleted");
+            redirectDashboard(request, response, "success=Account+deleted");
             return;
         }
         if ("TEACHER".equals(target.getRole()) && !"TEACHER".equals(role)
                 && DataStore.teacherHasActiveRecruitment(getServletContext(), target.getId())) {
-            response.sendRedirect(request.getContextPath() + "/admin/dashboard.jsp?error=Teacher+has+active+recruitment");
+            redirectDashboard(request, response, "error=Teacher+has+active+recruitment");
             return;
         }
 
@@ -74,7 +81,7 @@ public class AdminUserServlet extends HttpServlet {
             target.setPasswordHash(PasswordUtil.hash(resetPassword.trim()));
         }
         DataStore.saveUsers(getServletContext(), users);
-        response.sendRedirect(request.getContextPath() + "/admin/dashboard.jsp?success=Account+updated");
+        redirectDashboard(request, response, "success=Account+updated");
     }
 
     private void createTeacher(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -83,15 +90,15 @@ public class AdminUserServlet extends HttpServlet {
         String password = request.getParameter("password");
 
         if (name == null || name.trim().isEmpty() || email == null || email.trim().isEmpty()) {
-            response.sendRedirect(request.getContextPath() + "/admin/dashboard.jsp?error=Teacher+name+and+email+are+required");
+            redirectDashboard(request, response, "error=Teacher+name+and+email+are+required");
             return;
         }
         if (DataStore.findUserByEmail(getServletContext(), email.trim()) != null) {
-            response.sendRedirect(request.getContextPath() + "/admin/dashboard.jsp?error=Email+already+exists");
+            redirectDashboard(request, response, "error=Email+already+exists");
             return;
         }
         if (password == null || password.trim().isEmpty()) {
-            response.sendRedirect(request.getContextPath() + "/admin/dashboard.jsp?error=Password+is+required");
+            redirectDashboard(request, response, "error=Password+is+required");
             return;
         }
 
@@ -99,6 +106,29 @@ public class AdminUserServlet extends HttpServlet {
         users.add(new User("T" + ValidationUtil.nowStamp(), "", email.trim(), name.trim(),
                 PasswordUtil.hash(password.trim()), "TEACHER", true));
         DataStore.saveUsers(getServletContext(), users);
-        response.sendRedirect(request.getContextPath() + "/admin/dashboard.jsp?success=Teacher+account+created");
+        redirectDashboard(request, response, "success=Teacher+account+created");
+    }
+
+    private static void redirectDashboard(HttpServletRequest request, HttpServletResponse response, String query)
+            throws IOException {
+        response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+        response.setHeader("Pragma", "no-cache");
+        response.setDateHeader("Expires", 0);
+        String url = request.getContextPath() + "/admin/dashboard.jsp?" + query + "&_=" + System.currentTimeMillis();
+        response.sendRedirect(url);
+    }
+
+    /** Prefer delete when duplicate action params are submitted (hidden update + delete button). */
+    private static String resolveAction(HttpServletRequest request) {
+        String[] actions = request.getParameterValues("action");
+        if (actions == null || actions.length == 0) {
+            return null;
+        }
+        for (String value : actions) {
+            if ("delete".equals(value)) {
+                return "delete";
+            }
+        }
+        return actions[0];
     }
 }

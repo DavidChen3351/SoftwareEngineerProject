@@ -14,6 +14,10 @@
         response.sendRedirect(request.getContextPath() + "/ta/jobs.jsp?error=Position+not+found");
         return;
     }
+    if (job.isCancelled()) {
+        response.sendRedirect(request.getContextPath() + "/ta/jobs.jsp?error=This+position+has+been+cancelled");
+        return;
+    }
     if (!ValidationUtil.isJobOpenForApplications(job)) {
         response.sendRedirect(request.getContextPath() + "/ta/jobs.jsp?error=This+position+is+closed");
         return;

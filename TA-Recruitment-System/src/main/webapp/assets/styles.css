@@ -272,12 +272,87 @@ select {
     flex-wrap: wrap;
 }
 
+.jobs-search-bar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.jobs-search-bar input[type="search"] {
+    flex: 1;
+    min-width: 220px;
+    max-width: 480px;
+}
+
 .jobs-page .toolbar {
-    margin-top: 6px;
+    margin-top: 0;
 }
 
 .jobs-page .table-card {
     margin-top: 0;
+}
+
+.position-status {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.position-status.available {
+    color: var(--success);
+    background: rgba(47, 133, 90, 0.15);
+}
+
+.position-status.closed {
+    color: var(--danger);
+    background: rgba(201, 72, 72, 0.15);
+}
+
+.position-status.no-vacancy {
+    color: var(--muted);
+    background: rgba(111, 123, 129, 0.18);
+}
+
+.position-status.paused {
+    color: var(--warning);
+    background: rgba(221, 139, 32, 0.15);
+}
+
+.position-status.cancelled {
+    color: var(--danger);
+    background: rgba(201, 72, 72, 0.15);
+}
+
+.teacher-job-row-cancelled {
+    opacity: 0.75;
+    background: #f5f0ea;
+}
+
+.deadline-closed {
+    color: var(--danger);
+    font-weight: 700;
+}
+
+.vacancy-available {
+    color: var(--success);
+    font-weight: 700;
+}
+
+.vacancy-full {
+    color: var(--muted);
+    font-weight: 700;
+}
+
+.empty-state-message {
+    margin: 0;
+    padding: 32px 12px;
+    text-align: center;
+    color: var(--muted);
+    font-weight: 600;
 }
 
 .ta-my-apps h3 {

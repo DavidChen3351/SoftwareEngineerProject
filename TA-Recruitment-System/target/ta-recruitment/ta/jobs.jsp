@@ -3,7 +3,11 @@
 <%@ page import="com.bupt.ta.model.Job" %>
 <%@ page import="com.bupt.ta.model.User" %>
 <%@ page import="com.bupt.ta.util.DataStore" %>
+<%@ page import="com.bupt.ta.util.PositionStatus" %>
 <%@ page import="com.bupt.ta.util.ValidationUtil" %>
+<%@ page import="java.net.URLEncoder" %>
+<%@ page import="java.nio.charset.StandardCharsets" %>
+<%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.List" %>
@@ -13,8 +17,29 @@
         response.sendRedirect(request.getContextPath() + "/login.jsp");
         return;
     }
-    List<Job> jobs = DataStore.loadJobs(application);
+    List<Job> jobs = new ArrayList<Job>();
+    for (Job loaded : DataStore.loadJobs(application)) {
+        if (!loaded.isCancelled()) {
+            jobs.add(loaded);
+        }
+    }
+    String query = request.getParameter("q");
+    boolean searching = query != null && !query.trim().isEmpty();
+    if (searching) {
+        String needle = query.trim().toLowerCase();
+        List<Job> filtered = new ArrayList<Job>();
+        for (Job job : jobs) {
+            if (job.getTitle().toLowerCase().contains(needle)
+                    || job.getCourseName().toLowerCase().contains(needle)
+                    || job.getTeacherName().toLowerCase().contains(needle)
+                    || job.getWorkload().toLowerCase().contains(needle)) {
+                filtered.add(job);
+            }
+        }
+        jobs = filtered;
+    }
     String sort = request.getParameter("sort");
+    String queryParam = searching ? "&q=" + URLEncoder.encode(query.trim(), StandardCharsets.UTF_8.name()) : "";
     if ("deadline".equals(sort)) {
         Collections.sort(jobs, new Comparator<Job>() {
             public int compare(Job left, Job right) {
@@ -87,12 +112,25 @@
         </table>
     </div>
     <% } %>
+    <form class="jobs-search-bar" method="get" action="jobs.jsp">
+        <% if (sort != null && !sort.isEmpty()) { %>
+        <input type="hidden" name="sort" value="<%=sort%>">
+        <% } %>
+        <input type="search" name="q" value="<%=searching ? query.trim() : ""%>" placeholder="Search by position, course, teacher, or workload" aria-label="Search positions">
+        <button type="submit" class="primary-btn small">Search</button>
+        <% if (searching) { %>
+        <a class="secondary-btn small" href="jobs.jsp<%=(sort != null && !sort.isEmpty()) ? "?sort=" + sort : ""%>">Clear</a>
+        <% } %>
+    </form>
     <div class="toolbar">
-        <a class="<%="deadline".equals(sort) ? "chip active" : "chip"%>" href="?sort=deadline">Sort by deadline</a>
-        <a class="<%="course".equals(sort) ? "chip active" : "chip"%>" href="?sort=course">Sort by course</a>
-        <a class="<%=(sort == null || sort.isEmpty()) ? "chip active" : "chip"%>" href="jobs.jsp">Default order</a>
+        <a class="<%="deadline".equals(sort) ? "chip active" : "chip"%>" href="?sort=deadline<%=queryParam%>">Sort by deadline</a>
+        <a class="<%="course".equals(sort) ? "chip active" : "chip"%>" href="?sort=course<%=queryParam%>">Sort by course</a>
+        <a class="<%=(sort == null || sort.isEmpty()) ? "chip active" : "chip"%>" href="jobs.jsp<%=searching ? "?q=" + URLEncoder.encode(query.trim(), StandardCharsets.UTF_8.name()) : ""%>">Default order</a>
     </div>
     <div class="table-card">
+        <% if (jobs.isEmpty()) { %>
+        <p class="empty-state-message"><%=searching ? "No positions match your search" : "No positions available"%></p>
+        <% } else { %>
         <table>
             <thead>
             <tr>
@@ -101,22 +139,29 @@
                 <th>Workload</th>
                 <th>Deadline</th>
                 <th>Remaining Slots</th>
-                <th>Action / Status</th>
+                <th>Status</th>
+                <th>Action</th>
             </tr>
             </thead>
             <tbody>
             <% for (Job job : jobs) {
-                boolean available = ValidationUtil.isJobOpenForApplications(job);
+                PositionStatus positionStatus = ValidationUtil.getPositionStatus(job);
+                boolean canApply = ValidationUtil.isJobOpenForApplications(job);
                 boolean applied = DataStore.hasApplied(application, job.getId(), currentUser.getStudentId());
                 ApplicationRecord myApp = applied ? DataStore.findApplicationByJobAndStudent(application, job.getId(), currentUser.getStudentId()) : null;
                 String appStatus = myApp != null && myApp.getStatus() != null ? myApp.getStatus() : "PENDING";
+                String deadlineDisplay = job.getDeadline().replace("T", " ");
+                int vacancy = job.getRemainingSlots();
+                String vacancyClass = positionStatus == PositionStatus.AVAILABLE ? "vacancy-available"
+                        : (positionStatus == PositionStatus.NO_VACANCY ? "vacancy-full" : "");
             %>
             <tr>
                 <td><strong><%=job.getTitle()%></strong><span class="subtle">Posted by <%=job.getTeacherName()%></span></td>
                 <td><%=job.getCourseName()%></td>
                 <td><%=job.getWorkload()%></td>
-                <td><%=job.getDeadline().replace("T", " ")%></td>
-                <td><%=job.getRemainingSlots()%> / <%=job.getTotalSlots()%></td>
+                <td class="<%=positionStatus == PositionStatus.CLOSED ? "deadline-closed" : ""%>"><%=deadlineDisplay%></td>
+                <td><span class="<%=vacancyClass%>"><%=vacancy%> / <%=job.getTotalSlots()%></span></td>
+                <td><span class="<%=positionStatus.getCssClass()%>"><%=positionStatus.getLabel()%></span></td>
                 <td>
                     <% if (applied) {
                         String statusLabel = "ACCEPTED".equals(appStatus) ? "Accepted" : ("REJECTED".equals(appStatus) ? "Rejected" : "Pending");
@@ -125,16 +170,17 @@
                         <span class="status <%=appStatus.toLowerCase()%>"><%=statusLabel%></span>
                         <span class="subtle">Applied</span>
                     </div>
-                    <% } else if (available) { %>
-                    <a class="primary-btn small" href="<%=request.getContextPath()%>/ta/apply.jsp?jobId=<%=job.getId()%>">Apply</a>
+                    <% } else if (canApply && positionStatus.canApply()) { %>
+                    <a class="primary-btn small" href="<%=request.getContextPath()%>/ta/apply.jsp?jobId=<%=job.getId()%>">APPLY NOW</a>
                     <% } else { %>
-                    <button class="disabled-btn" disabled>Closed</button>
+                    <button type="button" class="disabled-btn small" disabled aria-disabled="true">APPLY NOW</button>
                     <% } %>
                 </td>
             </tr>
             <% } %>
             </tbody>
         </table>
+        <% } %>
     </div>
 </main>
 </body>

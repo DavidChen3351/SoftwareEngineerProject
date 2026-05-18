@@ -13,14 +13,23 @@ public class Job {
     private String deadline;
     private String teacherId;
     private String teacherName;
-    /** When false, teacher has paused listing; TA cannot apply even if deadline and slots allow. */
+    /** When false, teacher has paused new applications; position remains visible to TAs. */
     private boolean acceptingApplications = true;
+    /** When true, position is withdrawn and hidden from the TA job list. */
+    private boolean cancelled = false;
 
     public Job() {
     }
 
     public Job(String id, String title, String courseName, String workload, int totalSlots, int filledSlots,
                String deadline, String teacherId, String teacherName, boolean acceptingApplications) {
+        this(id, title, courseName, workload, totalSlots, filledSlots, deadline, teacherId, teacherName,
+                acceptingApplications, false);
+    }
+
+    public Job(String id, String title, String courseName, String workload, int totalSlots, int filledSlots,
+               String deadline, String teacherId, String teacherName, boolean acceptingApplications,
+               boolean cancelled) {
         this.id = id;
         this.title = title;
         this.courseName = courseName;
@@ -31,6 +40,7 @@ public class Job {
         this.teacherId = teacherId;
         this.teacherName = teacherName;
         this.acceptingApplications = acceptingApplications;
+        this.cancelled = cancelled;
     }
 
     public static Job fromMap(Map<String, Object> map) {
@@ -40,6 +50,13 @@ public class Job {
             accepting = ((Boolean) acceptingRaw).booleanValue();
         } else if (acceptingRaw != null) {
             accepting = Boolean.parseBoolean(String.valueOf(acceptingRaw));
+        }
+        boolean cancelled = false;
+        Object cancelledRaw = map.get("cancelled");
+        if (cancelledRaw instanceof Boolean) {
+            cancelled = ((Boolean) cancelledRaw).booleanValue();
+        } else if (cancelledRaw != null) {
+            cancelled = Boolean.parseBoolean(String.valueOf(cancelledRaw));
         }
         return new Job(
                 String.valueOf(map.get("id")),
@@ -51,7 +68,8 @@ public class Job {
                 String.valueOf(map.get("deadline")),
                 String.valueOf(map.get("teacherId")),
                 String.valueOf(map.get("teacherName")),
-                accepting
+                accepting,
+                cancelled
         );
     }
 
@@ -67,6 +85,7 @@ public class Job {
         map.put("teacherId", teacherId);
         map.put("teacherName", teacherName);
         map.put("acceptingApplications", acceptingApplications);
+        map.put("cancelled", cancelled);
         return map;
     }
 
@@ -152,5 +171,13 @@ public class Job {
 
     public void setAcceptingApplications(boolean acceptingApplications) {
         this.acceptingApplications = acceptingApplications;
+    }
+
+    public boolean isCancelled() {
+        return cancelled;
+    }
+
+    public void setCancelled(boolean cancelled) {
+        this.cancelled = cancelled;
     }
 }

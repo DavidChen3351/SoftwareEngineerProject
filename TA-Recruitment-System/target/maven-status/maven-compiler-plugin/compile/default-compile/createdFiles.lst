@@ -1,3 +1,6 @@
 com\bupt\ta\servlet\JobListingServlet.class
 com\bupt\ta\servlet\JobQuotaServlet.class
+com\bupt\ta\servlet\JobCancelServlet.class
+com\bupt\ta\util\PositionStatus.class
+com\bupt\ta\listener\DataIntegrityListener.class
 com\bupt\ta\util\DataStore$1.class
