@@ -188,6 +188,15 @@ public final class DataStore {
         recalculateFilledSlots(context);
     }
 
+    public static synchronized void removeApplicationsForJob(ServletContext context, String jobId) {
+        if (jobId == null || jobId.trim().isEmpty()) {
+            return;
+        }
+        List<ApplicationRecord> applications = loadApplications(context);
+        applications.removeIf(application -> jobId.trim().equals(application.getJobId()));
+        saveApplications(context, applications);
+    }
+
     /** filledSlots = count of ACCEPTED applications per job (capped at totalSlots). */
     public static synchronized void recalculateFilledSlots(ServletContext context) {
         List<Job> jobs = loadJobs(context);

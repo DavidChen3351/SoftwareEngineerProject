@@ -6,6 +6,7 @@ import java.util.Map;
 public class Job {
     private String id;
     private String title;
+    private String moduleCode;
     private String courseName;
     private String workload;
     private int totalSlots;
@@ -23,15 +24,16 @@ public class Job {
 
     public Job(String id, String title, String courseName, String workload, int totalSlots, int filledSlots,
                String deadline, String teacherId, String teacherName, boolean acceptingApplications) {
-        this(id, title, courseName, workload, totalSlots, filledSlots, deadline, teacherId, teacherName,
+        this(id, title, "", courseName, workload, totalSlots, filledSlots, deadline, teacherId, teacherName,
                 acceptingApplications, false);
     }
 
-    public Job(String id, String title, String courseName, String workload, int totalSlots, int filledSlots,
+    public Job(String id, String title, String moduleCode, String courseName, String workload, int totalSlots, int filledSlots,
                String deadline, String teacherId, String teacherName, boolean acceptingApplications,
                boolean cancelled) {
         this.id = id;
         this.title = title;
+        this.moduleCode = moduleCode == null ? "" : moduleCode.trim();
         this.courseName = courseName;
         this.workload = workload;
         this.totalSlots = totalSlots;
@@ -61,6 +63,7 @@ public class Job {
         return new Job(
                 String.valueOf(map.get("id")),
                 String.valueOf(map.get("title")),
+                map.get("moduleCode") == null ? "" : String.valueOf(map.get("moduleCode")),
                 String.valueOf(map.get("courseName")),
                 String.valueOf(map.get("workload")),
                 ((Number) map.get("totalSlots")).intValue(),
@@ -77,6 +80,7 @@ public class Job {
         Map<String, Object> map = new LinkedHashMap<String, Object>();
         map.put("id", id);
         map.put("title", title);
+        map.put("moduleCode", moduleCode);
         map.put("courseName", courseName);
         map.put("workload", workload);
         map.put("totalSlots", totalSlots);
@@ -111,6 +115,14 @@ public class Job {
 
     public String getCourseName() {
         return courseName;
+    }
+
+    public String getModuleCode() {
+        return moduleCode;
+    }
+
+    public void setModuleCode(String moduleCode) {
+        this.moduleCode = moduleCode;
     }
 
     public void setCourseName(String courseName) {

@@ -26,6 +26,7 @@ public class JobServlet extends HttpServlet {
         }
 
         String title = request.getParameter("title");
+        String moduleCode = request.getParameter("moduleCode");
         String courseName = request.getParameter("courseName");
         String workload = request.getParameter("workload");
         int totalSlots = Integer.parseInt(request.getParameter("totalSlots"));
@@ -37,8 +38,9 @@ public class JobServlet extends HttpServlet {
         }
 
         List<Job> jobs = DataStore.loadJobs(getServletContext());
-        jobs.add(new Job("J" + ValidationUtil.nowStamp(), title, courseName, workload, totalSlots, 0, deadline,
-                teacher.getId(), teacher.getName(), true));
+        String normalizedModuleCode = moduleCode == null ? "" : moduleCode.trim();
+        jobs.add(new Job("J" + ValidationUtil.nowStamp(), title, normalizedModuleCode, courseName, workload, totalSlots,
+                0, deadline, teacher.getId(), teacher.getName(), true, false));
         DataStore.saveJobs(getServletContext(), jobs);
         response.sendRedirect(request.getContextPath() + "/teacher/dashboard.jsp?success=Position+published");
     }

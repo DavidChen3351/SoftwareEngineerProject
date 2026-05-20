@@ -30,6 +30,7 @@
         List<Job> filtered = new ArrayList<Job>();
         for (Job job : jobs) {
             if (job.getTitle().toLowerCase().contains(needle)
+                    || job.getModuleCode().toLowerCase().contains(needle)
                     || job.getCourseName().toLowerCase().contains(needle)
                     || job.getTeacherName().toLowerCase().contains(needle)
                     || job.getWorkload().toLowerCase().contains(needle)) {
@@ -49,6 +50,10 @@
     } else if ("course".equals(sort)) {
         Collections.sort(jobs, new Comparator<Job>() {
             public int compare(Job left, Job right) {
+                int byCode = left.getModuleCode().compareToIgnoreCase(right.getModuleCode());
+                if (byCode != 0) {
+                    return byCode;
+                }
                 return left.getCourseName().compareToIgnoreCase(right.getCourseName());
             }
         });
@@ -88,9 +93,10 @@
             <thead>
             <tr>
                 <th>Position</th>
-                <th>Course</th>
+                <th>Module</th>
                 <th>Submitted</th>
                 <th>Result</th>
+                <th>Position status</th>
             </tr>
             </thead>
             <tbody>
@@ -98,14 +104,24 @@
                 Job linked = DataStore.findJob(application, row.getJobId());
                 String jobTitle = linked != null ? linked.getTitle() : "(Position removed)";
                 String courseName = linked != null ? linked.getCourseName() : "—";
+                String moduleCode = linked != null && linked.getModuleCode() != null && !linked.getModuleCode().isEmpty()
+                        ? linked.getModuleCode() : "-";
+                boolean cancelled = linked != null && linked.isCancelled();
                 String st = row.getStatus() == null ? "PENDING" : row.getStatus();
                 String label = "ACCEPTED".equals(st) ? "Accepted" : ("REJECTED".equals(st) ? "Rejected" : "Pending");
             %>
             <tr>
                 <td><strong><%=jobTitle%></strong></td>
-                <td><%=courseName%></td>
+                <td><%=moduleCode%> / <%=courseName%></td>
                 <td><%=row.getSubmittedAt()%></td>
                 <td><span class="status <%=st.toLowerCase()%>"><%=label%></span></td>
+                <td>
+                    <% if (cancelled) { %>
+                    <span class="position-status cancelled">Position cancelled</span>
+                    <% } else { %>
+                    <span class="subtle">Active</span>
+                    <% } %>
+                </td>
             </tr>
             <% } %>
             </tbody>
@@ -116,7 +132,7 @@
         <% if (sort != null && !sort.isEmpty()) { %>
         <input type="hidden" name="sort" value="<%=sort%>">
         <% } %>
-        <input type="search" name="q" value="<%=searching ? query.trim() : ""%>" placeholder="Search by position, course, teacher, or workload" aria-label="Search positions">
+        <input type="search" name="q" value="<%=searching ? query.trim() : ""%>" placeholder="Search by position, module code/name, teacher, or workload" aria-label="Search positions">
         <button type="submit" class="primary-btn small">Search</button>
         <% if (searching) { %>
         <a class="secondary-btn small" href="jobs.jsp<%=(sort != null && !sort.isEmpty()) ? "?sort=" + sort : ""%>">Clear</a>
@@ -124,7 +140,7 @@
     </form>
     <div class="toolbar">
         <a class="<%="deadline".equals(sort) ? "chip active" : "chip"%>" href="?sort=deadline<%=queryParam%>">Sort by deadline</a>
-        <a class="<%="course".equals(sort) ? "chip active" : "chip"%>" href="?sort=course<%=queryParam%>">Sort by course</a>
+        <a class="<%="course".equals(sort) ? "chip active" : "chip"%>" href="?sort=course<%=queryParam%>">Sort by module</a>
         <a class="<%=(sort == null || sort.isEmpty()) ? "chip active" : "chip"%>" href="jobs.jsp<%=searching ? "?q=" + URLEncoder.encode(query.trim(), StandardCharsets.UTF_8.name()) : ""%>">Default order</a>
     </div>
     <div class="table-card">
@@ -135,7 +151,8 @@
             <thead>
             <tr>
                 <th>Position</th>
-                <th>Course</th>
+                <th>Module Code</th>
+                <th>Module Name</th>
                 <th>Workload</th>
                 <th>Deadline</th>
                 <th>Remaining Slots</th>
@@ -157,6 +174,7 @@
             %>
             <tr>
                 <td><strong><%=job.getTitle()%></strong><span class="subtle">Posted by <%=job.getTeacherName()%></span></td>
+                <td><%=job.getModuleCode() == null || job.getModuleCode().isEmpty() ? "-" : job.getModuleCode()%></td>
                 <td><%=job.getCourseName()%></td>
                 <td><%=job.getWorkload()%></td>
                 <td class="<%=positionStatus == PositionStatus.CLOSED ? "deadline-closed" : ""%>"><%=deadlineDisplay%></td>
