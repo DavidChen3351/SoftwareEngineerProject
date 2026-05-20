@@ -27,8 +27,15 @@
         <div class="alert success"><%=request.getParameter("success")%></div>
         <% } %>
         <form action="<%=request.getContextPath()%>/auth/login" method="post" class="stack-form">
-            <label>Email
-                <input type="email" name="email" required>
+            <label>Login role
+                <select name="role" required>
+                    <option value="TA">TA Applicant</option>
+                    <option value="TEACHER">MO</option>
+                    <option value="ADMIN">Admin</option>
+                </select>
+            </label>
+            <label>Username (Student/Staff ID)
+                <input type="text" name="username" required>
             </label>
             <label>Password
                 <input type="password" name="password" required>
@@ -39,9 +46,9 @@
         <a href="<%=request.getContextPath()%>/register.jsp" class="secondary-link">Create TA account</a>
         <div class="demo-box">
             <p>Demo accounts</p>
-            <span>TA: ta1@bupt.edu.cn / 123456</span>
-            <span>Teacher: teacher1@bupt.edu.cn / 123456</span>
-            <span>Admin: admin@bupt.edu.cn / 123456</span>
+            <span>TA Applicant: 20230001 / 123456</span>
+            <span>MO: T1001 / 123456</span>
+            <span>Admin: A1001 / 123456</span>
         </div>
     </div>
 </div>

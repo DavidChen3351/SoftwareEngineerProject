@@ -16,12 +16,17 @@ public class LoginServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
-        String email = request.getParameter("email");
+        String username = request.getParameter("username");
         String password = request.getParameter("password");
+        String selectedRole = request.getParameter("role");
 
-        User user = DataStore.findUserByEmail(getServletContext(), email);
+        User user = DataStore.findUserByLoginId(getServletContext(), username);
         if (user == null || !user.isEnabled() || !user.getPasswordHash().equals(PasswordUtil.hash(password))) {
             response.sendRedirect(request.getContextPath() + "/login.jsp?error=Invalid+credentials+or+disabled+account");
+            return;
+        }
+        if (!user.getRole().equals(selectedRole)) {
+            response.sendRedirect(request.getContextPath() + "/login.jsp?error=Selected+role+does+not+match+this+account");
             return;
         }
 

@@ -11,7 +11,7 @@
     <div class="brand-panel">
         <span class="eyebrow">BUPT International College</span>
         <h1>Create a TA account</h1>
-        <p>Student ID and email must be unique.</p>
+        <p>Student ID and university email must be unique. Password must include uppercase, lowercase, and a number.</p>
     </div>
     <div class="form-panel">
         <h2>TA Registration</h2>
@@ -26,11 +26,14 @@
             <label>Full name
                 <input type="text" name="name" required>
             </label>
-            <label>Email
-                <input type="email" name="email" required>
+            <label>University Email
+                <input type="email" name="email" placeholder="name@bupt.edu.cn" required>
             </label>
             <label>Password
                 <input type="password" name="password" required>
+            </label>
+            <label>Confirm Password
+                <input type="password" name="confirmPassword" required>
             </label>
             <button type="submit" class="primary-btn">Register</button>
         </form>

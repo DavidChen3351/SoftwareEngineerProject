@@ -96,6 +96,20 @@ public final class DataStore {
         return null;
     }
 
+    public static User findUserByLoginId(ServletContext context, String loginId) {
+        if (loginId == null || loginId.trim().isEmpty()) {
+            return null;
+        }
+        String normalized = loginId.trim();
+        for (User user : loadUsers(context)) {
+            if (normalized.equalsIgnoreCase(user.getStudentId())
+                    || normalized.equalsIgnoreCase(user.getId())) {
+                return user;
+            }
+        }
+        return null;
+    }
+
     public static Job findJob(ServletContext context, String jobId) {
         for (Job job : loadJobs(context)) {
             if (job.getId().equals(jobId)) {
