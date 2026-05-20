@@ -48,7 +48,8 @@
     <div class="detail-grid">
         <div class="info-card">
             <h3>Position summary</h3>
-            <p><strong>Course:</strong> <%=job.getCourseName()%></p>
+            <p><strong>Module Code:</strong> <%=job.getModuleCode() == null || job.getModuleCode().isEmpty() ? "-" : job.getModuleCode()%></p>
+            <p><strong>Module Name:</strong> <%=job.getCourseName()%></p>
             <p><strong>Workload:</strong> <%=job.getWorkload()%></p>
             <p><strong>Deadline:</strong> <%=job.getDeadline().replace("T", " ")%></p>
             <p><strong>Remaining slots:</strong> <%=job.getRemainingSlots()%></p>

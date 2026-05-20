@@ -73,7 +73,10 @@
                 <label>Position title
                     <input type="text" name="title" required>
                 </label>
-                <label>Course name
+                <label>Module Code (optional)
+                    <input type="text" name="moduleCode" placeholder="e.g. CS201">
+                </label>
+                <label>Module Name
                     <input type="text" name="courseName" required>
                 </label>
                 <label>Workload
@@ -98,7 +101,8 @@
                 <thead>
                 <tr>
                     <th>Position</th>
-                    <th>Course</th>
+                    <th>Module Code</th>
+                    <th>Module Name</th>
                     <th>Quota</th>
                     <th>Deadline</th>
                     <th>Status</th>
@@ -131,6 +135,7 @@
                 %>
                 <tr class="<%=job.isCancelled() ? "teacher-job-row-cancelled" : ""%>">
                     <td><%=job.getTitle()%></td>
+                    <td><%=job.getModuleCode() == null || job.getModuleCode().isEmpty() ? "-" : job.getModuleCode()%></td>
                     <td><%=job.getCourseName()%></td>
                     <td><%=job.getFilledSlots()%> / <%=job.getTotalSlots()%></td>
                     <td><%=job.getDeadline().replace("T", " ")%></td>
@@ -162,6 +167,11 @@
                             <% } else { %>
                             <span class="subtle">Withdrawn from TA portal</span>
                             <% } %>
+                            <form class="inline-form" method="post" action="<%=request.getContextPath()%>/teacher/jobs/delete"
+                                  onsubmit="return confirm('Permanently delete this position and all related applications? This cannot be undone.');">
+                                <input type="hidden" name="jobId" value="<%=job.getId()%>">
+                                <button type="submit" class="danger-btn small">Delete permanently</button>
+                            </form>
                         </div>
                     </td>
                 </tr>
@@ -177,6 +187,7 @@
             <tr>
                 <th>Student</th>
                 <th>Job</th>
+                <th>Module</th>
                 <th>Skills</th>
                 <th>Submitted</th>
                 <th>Status</th>
@@ -187,9 +198,12 @@
             <tbody>
             <% for (ApplicationRecord item : applications) {
                 String title = "";
+                String module = "";
                 for (Job job : jobs) {
                     if (job.getId().equals(item.getJobId())) {
                         title = job.getTitle();
+                        String moduleCode = job.getModuleCode() == null || job.getModuleCode().isEmpty() ? "-" : job.getModuleCode();
+                        module = moduleCode + " / " + job.getCourseName();
                         break;
                     }
                 }
@@ -197,6 +211,7 @@
             <tr>
                 <td><strong><%=item.getStudentName()%></strong><span class="subtle"><%=item.getStudentEmail()%></span></td>
                 <td><%=title%></td>
+                <td><%=module%></td>
                 <td><%=item.getSkills()%></td>
                 <td><%=item.getSubmittedAt()%></td>
                 <td><span class="status <%=item.getStatus().toLowerCase()%>"><%=item.getStatus()%></span></td>
