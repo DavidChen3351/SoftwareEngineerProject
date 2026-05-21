@@ -4,31 +4,25 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%
-    response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
-    response.setHeader("Pragma", "no-cache");
-    response.setDateHeader("Expires", 0);
     User currentUser = (User) session.getAttribute("currentUser");
     if (currentUser == null || !"ADMIN".equals(currentUser.getRole())) {
         response.sendRedirect(request.getContextPath() + "/login.jsp");
         return;
     }
-    List<User> allUsers = DataStore.loadUsers(application);
-    List<User> users = new ArrayList<User>();
-    String query = request.getParameter("q");
-    String roleFilter = request.getParameter("role");
-    boolean searching = query != null && !query.trim().isEmpty();
-    boolean filteringByRole = roleFilter != null && !roleFilter.trim().isEmpty();
-    String normalizedQuery = searching ? query.trim().toLowerCase() : "";
-    String normalizedRole = filteringByRole ? roleFilter.trim().toUpperCase() : "";
-    for (User user : allUsers) {
-        boolean matchesQuery = !searching
-                || (user.getName() != null && user.getName().toLowerCase().contains(normalizedQuery))
-                || (user.getId() != null && user.getId().toLowerCase().contains(normalizedQuery))
-                || (user.getStudentId() != null && user.getStudentId().toLowerCase().contains(normalizedQuery))
-                || (user.getEmail() != null && user.getEmail().toLowerCase().contains(normalizedQuery));
-        boolean matchesRole = !filteringByRole || normalizedRole.equals(user.getRole());
-        if (matchesQuery && matchesRole) {
-            users.add(user);
+    String query = request.getParameter("query") == null ? "" : request.getParameter("query").trim().toLowerCase();
+    String filterRole = request.getParameter("role") == null ? "" : request.getParameter("role");
+    String filterEnabled = request.getParameter("enabled") == null ? "" : request.getParameter("enabled");
+    List<User> users = DataStore.loadUsers(application);
+    List<User> filteredUsers = new ArrayList<User>();
+    for (User user : users) {
+        boolean matchesQuery = query.isEmpty() || user.getName().toLowerCase().contains(query)
+                || user.getEmail().toLowerCase().contains(query);
+        boolean matchesRole = filterRole.isEmpty() || filterRole.equals(user.getRole());
+        boolean matchesEnabled = filterEnabled.isEmpty()
+                || ("true".equals(filterEnabled) && user.isEnabled())
+                || ("false".equals(filterEnabled) && !user.isEnabled());
+        if (matchesQuery && matchesRole && matchesEnabled) {
+            filteredUsers.add(user);
         }
     }
 %>
@@ -79,26 +73,48 @@
             <p>Teachers with active recruitment cannot be reassigned or deleted. Accounts with protected actions show inline warnings before submission.</p>
         </div>
     </section>
+    <section class="detail-grid admin-grid">
+        <div class="form-card">
+            <h3>Search and filter users</h3>
+            <form action="<%=request.getContextPath()%>/admin/dashboard.jsp" method="get" class="stack-form">
+                <label>Keyword
+                    <input type="text" name="query" placeholder="Search name or email" value="<%=query%>">
+                </label>
+                <label>Role
+                    <select name="role">
+                        <option value="" <%=filterRole.isEmpty() ? "selected" : ""%>>All</option>
+                        <option value="TA" <%="TA".equals(filterRole) ? "selected" : ""%>>TA</option>
+                        <option value="TEACHER" <%="TEACHER".equals(filterRole) ? "selected" : ""%>>Teacher</option>
+                        <option value="ADMIN" <%="ADMIN".equals(filterRole) ? "selected" : ""%>>Admin</option>
+                    </select>
+                </label>
+                <label>Status
+                    <select name="enabled">
+                        <option value="" <%=filterEnabled.isEmpty() ? "selected" : ""%>>All</option>
+                        <option value="true" <%="true".equals(filterEnabled) ? "selected" : ""%>>Enabled</option>
+                        <option value="false" <%="false".equals(filterEnabled) ? "selected" : ""%>>Disabled</option>
+                    </select>
+                </label>
+                <div class="admin-actions">
+                    <button type="submit" class="primary-btn small">Search</button>
+                    <a href="<%=request.getContextPath()%>/admin/dashboard.jsp" class="secondary-btn small">Clear</a>
+                </div>
+            </form>
+        </div>
+        <div class="info-card">
+            <h3>Batch actions</h3>
+            <form id="batchForm" action="<%=request.getContextPath()%>/admin/users/update" method="post" class="stack-form">
+                <button type="submit" name="action" value="batchEnable" class="primary-btn">Enable selected</button>
+                <button type="submit" name="action" value="batchDisable" class="danger-btn">Disable selected</button>
+                <p class="field-hint">Select multiple users and then choose a batch action.</p>
+            </form>
+        </div>
+    </section>
     <div class="table-card">
-        <form class="jobs-search-bar" method="get" action="dashboard.jsp">
-            <input type="search" name="q" value="<%=searching ? query.trim() : ""%>" placeholder="Search by name, ID, student ID, or email" aria-label="Search users">
-            <select name="role" aria-label="Filter users by role">
-                <option value="" <%=!filteringByRole ? "selected" : ""%>>All</option>
-                <option value="TA" <%="TA".equals(normalizedRole) ? "selected" : ""%>>TA</option>
-                <option value="TEACHER" <%="TEACHER".equals(normalizedRole) ? "selected" : ""%>>MO</option>
-                <option value="ADMIN" <%="ADMIN".equals(normalizedRole) ? "selected" : ""%>>Admin</option>
-            </select>
-            <button type="submit" class="primary-btn small">Search</button>
-            <% if (searching || filteringByRole) { %>
-            <a class="secondary-btn small" href="dashboard.jsp">Clear</a>
-            <% } %>
-        </form>
-        <% if (users.isEmpty()) { %>
-        <p class="empty-state-message">No users match the current search or role filter.</p>
-        <% } else { %>
         <table>
             <thead>
             <tr>
+                <th><input type="checkbox" onclick="toggleSelectAll(this)" title="Select all"></th>
                 <th>Name</th>
                 <th>Email</th>
                 <th>Student ID</th>
@@ -108,7 +124,7 @@
             </tr>
             </thead>
             <tbody>
-            <% for (User user : users) {
+            <% for (User user : filteredUsers) {
                 boolean isSelf = currentUser.getId().equals(user.getId());
                 boolean hasActiveRecruitment = "TEACHER".equals(user.getRole()) && DataStore.teacherHasActiveRecruitment(application, user.getId());
                 boolean deleteBlocked = isSelf || hasActiveRecruitment;
@@ -120,6 +136,9 @@
                 }
             %>
             <tr>
+                <td>
+                    <input type="checkbox" name="selectedUserIds" value="<%=user.getId()%>" form="batchForm" <%=isSelf ? "disabled" : ""%>>
+                </td>
                 <td><strong><%=user.getName()%></strong></td>
                 <td><%=user.getEmail()%></td>
                 <td><%=user.getStudentId() == null || user.getStudentId().isEmpty() ? "-" : user.getStudentId()%></td>
@@ -128,18 +147,23 @@
                 <td>
                     <form action="<%=request.getContextPath()%>/admin/users/update" method="post" class="admin-form">
                         <input type="hidden" name="userId" value="<%=user.getId()%>">
-                        <select name="role">
+                        <input type="hidden" name="action" value="update">
+                        <% if (isSelf) { %>
+                        <input type="hidden" name="role" value="<%=user.getRole()%>">
+                        <input type="hidden" name="enabled" value="<%=user.isEnabled() ? "true" : "false"%>">
+                        <% } %>
+                        <select name="role" <%=isSelf ? "disabled" : ""%>>
                             <option value="TA" <%="TA".equals(user.getRole()) ? "selected" : ""%>>TA</option>
                             <option value="TEACHER" <%="TEACHER".equals(user.getRole()) ? "selected" : ""%>>Teacher</option>
                             <option value="ADMIN" <%="ADMIN".equals(user.getRole()) ? "selected" : ""%>>Admin</option>
                         </select>
-                        <select name="enabled">
+                        <select name="enabled" <%=isSelf ? "disabled" : ""%>>
                             <option value="true" <%=user.isEnabled() ? "selected" : ""%>>Enabled</option>
                             <option value="false" <%=!user.isEnabled() ? "selected" : ""%>>Disabled</option>
                         </select>
                         <input type="text" name="resetPassword" placeholder="New password (optional)">
                         <div class="admin-actions">
-                            <button type="submit" name="action" value="update" class="primary-btn small">Save</button>
+                            <button type="submit" class="primary-btn small">Save</button>
                             <% if (deleteBlocked) { %>
                             <button type="button" class="disabled-btn small" disabled>Delete</button>
                             <% } else { %>
@@ -147,8 +171,9 @@
                                     onclick="return confirm('Delete this account?');">Delete</button>
                             <% } %>
                         </div>
-                        <span class="field-hint">Password must be at least 8 characters and include uppercase, lowercase, and a number.</span>
-                        <% if (!deleteReason.isEmpty()) { %>
+                        <% if (isSelf) { %>
+                        <span class="field-hint warning-text">Your own admin role and status cannot be changed here.</span>
+                        <% } else if (!deleteReason.isEmpty()) { %>
                         <span class="field-hint warning-text"><%=deleteReason%></span>
                         <% } %>
                     </form>
@@ -157,8 +182,17 @@
             <% } %>
             </tbody>
         </table>
-        <% } %>
     </div>
 </main>
+<script>
+    function toggleSelectAll(source) {
+        const checkboxes = document.querySelectorAll('input[name="selectedUserIds"]');
+        checkboxes.forEach(function (checkbox) {
+            if (!checkbox.disabled) {
+                checkbox.checked = source.checked;
+            }
+        });
+    }
+</script>
 </body>
 </html>
