@@ -151,15 +151,15 @@ public class AdminUserServlet extends HttpServlet {
         String password = safeParam(request.getParameter("password"), "").trim();
 
         if (name.isEmpty() || email.isEmpty()) {
-            redirectWithMessage(response, "/admin/dashboard.jsp", "error", "Teacher+name+and+email+are+required");
+            redirectWithMessage(request, response, "/admin/dashboard.jsp", "error", "Teacher+name+and+email+are+required");
             return;
         }
         if (DataStore.findUserByEmail(getServletContext(), email) != null) {
-            redirectWithMessage(response, "/admin/dashboard.jsp", "error", "Email+already+exists");
+            redirectWithMessage(request, response, "/admin/dashboard.jsp", "error", "Email+already+exists");
             return;
         }
         if (password.isEmpty()) {
-            redirectWithMessage(response, "/admin/dashboard.jsp", "error", "Password+is+required");
+            redirectWithMessage(request, response, "/admin/dashboard.jsp", "error", "Password+is+required");
             return;
         }
 
