@@ -60,4 +60,20 @@ public final class ValidationUtil {
     public static String nowDisplay() {
         return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
     }
+
+    public static boolean isStrongPassword(String password) {
+        if (password == null || password.length() < 8) {
+            return false;
+        }
+        boolean hasUpper = false;
+        boolean hasLower = false;
+        boolean hasDigit = false;
+        for (int index = 0; index < password.length(); index++) {
+            char ch = password.charAt(index);
+            hasUpper = hasUpper || Character.isUpperCase(ch);
+            hasLower = hasLower || Character.isLowerCase(ch);
+            hasDigit = hasDigit || Character.isDigit(ch);
+        }
+        return hasUpper && hasLower && hasDigit;
+    }
 }

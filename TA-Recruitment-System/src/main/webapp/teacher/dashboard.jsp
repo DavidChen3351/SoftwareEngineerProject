@@ -182,14 +182,19 @@
     </section>
     <section class="table-card">
         <h3>Applications for my courses</h3>
+        <% if (applications.isEmpty()) { %>
+        <p class="empty-state-message">No applications yet. Submitted TA applications for your positions will appear here.</p>
+        <% } else { %>
         <table>
             <thead>
             <tr>
                 <th>Student</th>
+                <th>Student ID</th>
                 <th>Job</th>
                 <th>Module</th>
                 <th>Skills</th>
                 <th>Submitted</th>
+                <th>Reviewed</th>
                 <th>Status</th>
                 <th>Resume</th>
                 <th>Decision</th>
@@ -210,10 +215,12 @@
             %>
             <tr>
                 <td><strong><%=item.getStudentName()%></strong><span class="subtle"><%=item.getStudentEmail()%></span></td>
+                <td><%=item.getStudentId()%></td>
                 <td><%=title%></td>
                 <td><%=module%></td>
                 <td><%=item.getSkills()%></td>
                 <td><%=item.getSubmittedAt()%></td>
+                <td><%="ACCEPTED".equals(item.getStatus()) && item.getReviewedAt() != null && !item.getReviewedAt().isEmpty() ? item.getReviewedAt() : "-"%></td>
                 <td><span class="status <%=item.getStatus().toLowerCase()%>"><%=item.getStatus()%></span></td>
                 <td><a href="<%=request.getContextPath()%>/<%=item.getResumePath()%>" target="_blank">View resume</a></td>
                 <td>
@@ -227,6 +234,7 @@
             <% } %>
             </tbody>
         </table>
+        <% } %>
     </section>
 </main>
 </body>

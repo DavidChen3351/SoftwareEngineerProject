@@ -5,6 +5,7 @@ import com.bupt.ta.model.Job;
 import com.bupt.ta.model.User;
 import com.bupt.ta.util.AuthUtil;
 import com.bupt.ta.util.DataStore;
+import com.bupt.ta.util.ValidationUtil;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -66,6 +67,7 @@ public class TeacherDecisionServlet extends HttpServlet {
         }
 
         target.setStatus(status);
+        target.setReviewedAt("ACCEPTED".equals(status) ? ValidationUtil.nowDisplay() : "");
         DataStore.saveApplications(getServletContext(), applications);
         DataStore.saveJobs(getServletContext(), jobs);
         response.sendRedirect(request.getContextPath() + "/teacher/dashboard.jsp?success=Application+updated");
