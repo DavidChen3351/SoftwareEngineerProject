@@ -41,7 +41,7 @@ public class RegisterServlet extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/register.jsp?error=Passwords+do+not+match");
             return;
         }
-        if (!isStrongPassword(password)) {
+        if (!ValidationUtil.isStrongPassword(password)) {
             response.sendRedirect(request.getContextPath() + "/register.jsp?error=Password+must+be+at+least+8+characters+and+include+uppercase+lowercase+and+number");
             return;
         }
@@ -69,19 +69,4 @@ public class RegisterServlet extends HttpServlet {
         return normalized.endsWith("@bupt.edu.cn") || normalized.endsWith("@mail.bupt.edu.cn");
     }
 
-    private static boolean isStrongPassword(String password) {
-        if (password == null || password.length() < 8) {
-            return false;
-        }
-        boolean hasUpper = false;
-        boolean hasLower = false;
-        boolean hasDigit = false;
-        for (int index = 0; index < password.length(); index++) {
-            char ch = password.charAt(index);
-            hasUpper = hasUpper || Character.isUpperCase(ch);
-            hasLower = hasLower || Character.isLowerCase(ch);
-            hasDigit = hasDigit || Character.isDigit(ch);
-        }
-        return hasUpper && hasLower && hasDigit;
-    }
 }

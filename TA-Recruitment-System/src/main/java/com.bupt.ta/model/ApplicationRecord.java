@@ -15,6 +15,7 @@ public class ApplicationRecord {
     private String resumePath;
     private String status;
     private String submittedAt;
+    private String reviewedAt;
 
     public ApplicationRecord() {
     }
@@ -33,10 +34,11 @@ public class ApplicationRecord {
         this.resumePath = resumePath;
         this.status = status;
         this.submittedAt = submittedAt;
+        this.reviewedAt = "";
     }
 
     public static ApplicationRecord fromMap(Map<String, Object> map) {
-        return new ApplicationRecord(
+        ApplicationRecord record = new ApplicationRecord(
                 String.valueOf(map.get("id")),
                 String.valueOf(map.get("jobId")),
                 String.valueOf(map.get("studentId")),
@@ -49,6 +51,8 @@ public class ApplicationRecord {
                 String.valueOf(map.get("status")),
                 String.valueOf(map.get("submittedAt"))
         );
+        record.setReviewedAt(map.get("reviewedAt") == null ? "" : String.valueOf(map.get("reviewedAt")));
+        return record;
     }
 
     public Map<String, Object> toMap() {
@@ -64,6 +68,7 @@ public class ApplicationRecord {
         map.put("resumePath", resumePath);
         map.put("status", status);
         map.put("submittedAt", submittedAt);
+        map.put("reviewedAt", reviewedAt);
         return map;
     }
 
@@ -153,5 +158,13 @@ public class ApplicationRecord {
 
     public void setSubmittedAt(String submittedAt) {
         this.submittedAt = submittedAt;
+    }
+
+    public String getReviewedAt() {
+        return reviewedAt;
+    }
+
+    public void setReviewedAt(String reviewedAt) {
+        this.reviewedAt = reviewedAt;
     }
 }

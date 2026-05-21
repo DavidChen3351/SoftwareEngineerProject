@@ -20,8 +20,12 @@ import java.nio.file.Paths;
 import java.util.List;
 
 @WebServlet("/ta/apply")
-@MultipartConfig(maxFileSize = 5 * 1024 * 1024)
+@MultipartConfig(maxFileSize = ApplicationServlet.MAX_RESUME_BYTES)
 public class ApplicationServlet extends HttpServlet {
+    public static final long MAX_RESUME_BYTES = 5L * 1024L * 1024L;
+    private static final String RESUME_TOO_LARGE_MESSAGE =
+            "Resume+file+is+too+large.+Please+upload+a+PDF+or+DOCX+up+to+5MB";
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
@@ -31,7 +35,13 @@ public class ApplicationServlet extends HttpServlet {
             return;
         }
 
-        String jobId = request.getParameter("jobId");
+        String jobId;
+        try {
+            jobId = request.getParameter("jobId");
+        } catch (IllegalStateException ex) {
+            redirectUploadTooLarge(request, response, null);
+            return;
+        }
         Job job = DataStore.findJob(getServletContext(), jobId);
         if (job == null || !ValidationUtil.isJobOpenForApplications(job)) {
             response.sendRedirect(request.getContextPath() + "/ta/jobs.jsp?error=This+position+is+no+longer+available");
@@ -42,7 +52,13 @@ public class ApplicationServlet extends HttpServlet {
             return;
         }
 
-        Part resume = request.getPart("resume");
+        Part resume;
+        try {
+            resume = request.getPart("resume");
+        } catch (IllegalStateException ex) {
+            redirectUploadTooLarge(request, response, jobId);
+            return;
+        }
         if (resume == null || resume.getSize() == 0 || resume.getSubmittedFileName() == null) {
             response.sendRedirect(request.getContextPath() + "/ta/apply.jsp?jobId=" + jobId + "&error=Resume+is+required");
             return;
@@ -71,5 +87,14 @@ public class ApplicationServlet extends HttpServlet {
                 request.getParameter("experience"), "uploads/" + fileName, "PENDING", ValidationUtil.nowDisplay()));
         DataStore.saveApplications(getServletContext(), applications);
         response.sendRedirect(request.getContextPath() + "/ta/jobs.jsp?success=Application+submitted+successfully");
+    }
+
+    private void redirectUploadTooLarge(HttpServletRequest request, HttpServletResponse response, String jobId)
+            throws IOException {
+        String target = "/ta/jobs.jsp?error=" + RESUME_TOO_LARGE_MESSAGE;
+        if (jobId != null && !jobId.trim().isEmpty()) {
+            target = "/ta/apply.jsp?jobId=" + jobId + "&error=" + RESUME_TOO_LARGE_MESSAGE;
+        }
+        response.sendRedirect(request.getContextPath() + target);
     }
 }

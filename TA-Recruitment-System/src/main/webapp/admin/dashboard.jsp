@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="com.bupt.ta.model.User" %>
 <%@ page import="com.bupt.ta.util.DataStore" %>
+<%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
 <%
     response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
@@ -11,7 +12,25 @@
         response.sendRedirect(request.getContextPath() + "/login.jsp");
         return;
     }
-    List<User> users = DataStore.loadUsers(application);
+    List<User> allUsers = DataStore.loadUsers(application);
+    List<User> users = new ArrayList<User>();
+    String query = request.getParameter("q");
+    String roleFilter = request.getParameter("role");
+    boolean searching = query != null && !query.trim().isEmpty();
+    boolean filteringByRole = roleFilter != null && !roleFilter.trim().isEmpty();
+    String normalizedQuery = searching ? query.trim().toLowerCase() : "";
+    String normalizedRole = filteringByRole ? roleFilter.trim().toUpperCase() : "";
+    for (User user : allUsers) {
+        boolean matchesQuery = !searching
+                || (user.getName() != null && user.getName().toLowerCase().contains(normalizedQuery))
+                || (user.getId() != null && user.getId().toLowerCase().contains(normalizedQuery))
+                || (user.getStudentId() != null && user.getStudentId().toLowerCase().contains(normalizedQuery))
+                || (user.getEmail() != null && user.getEmail().toLowerCase().contains(normalizedQuery));
+        boolean matchesRole = !filteringByRole || normalizedRole.equals(user.getRole());
+        if (matchesQuery && matchesRole) {
+            users.add(user);
+        }
+    }
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -61,6 +80,22 @@
         </div>
     </section>
     <div class="table-card">
+        <form class="jobs-search-bar" method="get" action="dashboard.jsp">
+            <input type="search" name="q" value="<%=searching ? query.trim() : ""%>" placeholder="Search by name, ID, student ID, or email" aria-label="Search users">
+            <select name="role" aria-label="Filter users by role">
+                <option value="" <%=!filteringByRole ? "selected" : ""%>>All</option>
+                <option value="TA" <%="TA".equals(normalizedRole) ? "selected" : ""%>>TA</option>
+                <option value="TEACHER" <%="TEACHER".equals(normalizedRole) ? "selected" : ""%>>MO</option>
+                <option value="ADMIN" <%="ADMIN".equals(normalizedRole) ? "selected" : ""%>>Admin</option>
+            </select>
+            <button type="submit" class="primary-btn small">Search</button>
+            <% if (searching || filteringByRole) { %>
+            <a class="secondary-btn small" href="dashboard.jsp">Clear</a>
+            <% } %>
+        </form>
+        <% if (users.isEmpty()) { %>
+        <p class="empty-state-message">No users match the current search or role filter.</p>
+        <% } else { %>
         <table>
             <thead>
             <tr>
@@ -112,6 +147,7 @@
                                     onclick="return confirm('Delete this account?');">Delete</button>
                             <% } %>
                         </div>
+                        <span class="field-hint">Password must be at least 8 characters and include uppercase, lowercase, and a number.</span>
                         <% if (!deleteReason.isEmpty()) { %>
                         <span class="field-hint warning-text"><%=deleteReason%></span>
                         <% } %>
@@ -121,6 +157,7 @@
             <% } %>
             </tbody>
         </table>
+        <% } %>
     </div>
 </main>
 </body>

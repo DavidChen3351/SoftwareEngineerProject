@@ -96,6 +96,7 @@
                 <th>Module</th>
                 <th>Submitted</th>
                 <th>Result</th>
+                <th>Reviewed</th>
                 <th>Position status</th>
             </tr>
             </thead>
@@ -115,6 +116,7 @@
                 <td><%=moduleCode%> / <%=courseName%></td>
                 <td><%=row.getSubmittedAt()%></td>
                 <td><span class="status <%=st.toLowerCase()%>"><%=label%></span></td>
+                <td><%="ACCEPTED".equals(st) && row.getReviewedAt() != null && !row.getReviewedAt().isEmpty() ? row.getReviewedAt() : "-"%></td>
                 <td>
                     <% if (cancelled) { %>
                     <span class="position-status cancelled">Position cancelled</span>

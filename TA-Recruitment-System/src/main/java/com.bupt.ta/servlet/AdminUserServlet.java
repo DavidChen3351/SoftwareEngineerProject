@@ -78,6 +78,10 @@ public class AdminUserServlet extends HttpServlet {
         target.setRole(role);
         target.setEnabled(enabled);
         if (resetPassword != null && !resetPassword.trim().isEmpty()) {
+            if (!ValidationUtil.isStrongPassword(resetPassword.trim())) {
+                redirectDashboard(request, response, "error=Password+must+be+at+least+8+characters+and+include+uppercase+lowercase+and+number");
+                return;
+            }
             target.setPasswordHash(PasswordUtil.hash(resetPassword.trim()));
         }
         DataStore.saveUsers(getServletContext(), users);
