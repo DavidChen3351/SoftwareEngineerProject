@@ -11,6 +11,8 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -172,11 +174,13 @@ public class AdminUserServlet extends HttpServlet {
             return;
         }
 
+        String teacherId = "T" + ValidationUtil.nowStamp();
+        User newTeacher = new User(teacherId, "", email, name,
+                PasswordUtil.hash(password), "TEACHER", true);
         List<User> users = DataStore.loadUsers(getServletContext());
-        users.add(new User("T" + ValidationUtil.nowStamp(), "", email, name,
-                PasswordUtil.hash(password), "TEACHER", true));
+        users.add(newTeacher);
         DataStore.saveUsers(getServletContext(), users);
-        redirectWithMessage(request, response, "/admin/dashboard.jsp", "success", "Teacher+account+created");
+        redirectAfterTeacherCreated(request, response, newTeacher.getId());
     }
 
     private String safeParam(String value, String defaultValue) {
@@ -189,6 +193,13 @@ public class AdminUserServlet extends HttpServlet {
 
     private void redirectWithMessage(HttpServletRequest request, HttpServletResponse response, String path, String type, String message) throws IOException {
         response.sendRedirect(response.encodeRedirectURL(request.getContextPath() + path + "?" + type + "=" + message));
+    }
+
+    private void redirectAfterTeacherCreated(HttpServletRequest request, HttpServletResponse response, String teacherId)
+            throws IOException {
+        String encodedId = URLEncoder.encode(teacherId, StandardCharsets.UTF_8);
+        response.sendRedirect(response.encodeRedirectURL(
+                request.getContextPath() + "/admin/dashboard.jsp?success=Teacher+account+created&newTeacherId=" + encodedId));
     }
 }
 

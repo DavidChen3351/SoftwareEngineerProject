@@ -57,6 +57,42 @@
     <% if (request.getParameter("success") != null) { %>
     <div class="alert success"><%=request.getParameter("success")%></div>
     <% } %>
+    <%
+        String newTeacherId = request.getParameter("newTeacherId");
+        if (newTeacherId != null && !newTeacherId.trim().isEmpty()) {
+            newTeacherId = newTeacherId.trim();
+    %>
+    <div id="teacher-id-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="teacher-id-modal-title">
+        <div class="modal-card">
+            <h3 id="teacher-id-modal-title">MO account created</h3>
+            <p class="modal-id-label">Account ID</p>
+            <p class="modal-id-value"><%=newTeacherId%></p>
+            <p class="modal-hint">Please remember this ID for login.</p>
+            <button type="button" id="teacher-id-modal-close" class="primary-btn">OK</button>
+        </div>
+    </div>
+    <script>
+        (function () {
+            var modal = document.getElementById('teacher-id-modal');
+            var closeBtn = document.getElementById('teacher-id-modal-close');
+            function closeModal() {
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+            }
+            if (closeBtn) {
+                closeBtn.addEventListener('click', closeModal);
+            }
+            if (modal) {
+                modal.addEventListener('click', function (event) {
+                    if (event.target === modal) {
+                        closeModal();
+                    }
+                });
+            }
+        })();
+    </script>
+    <% } %>
     <section class="detail-grid admin-grid">
         <div class="form-card">
             <h3>Create teacher account</h3>

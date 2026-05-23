@@ -22,8 +22,8 @@ body {
     font-family: "Segoe UI", "Helvetica Neue", sans-serif;
     color: var(--text);
     background:
-        radial-gradient(circle at top left, rgba(191, 91, 44, 0.18), transparent 28%),
-        linear-gradient(180deg, #fbf7f0 0%, #f1ece2 100%);
+            radial-gradient(circle at top left, rgba(191, 91, 44, 0.18), transparent 28%),
+            linear-gradient(180deg, #fbf7f0 0%, #f1ece2 100%);
 }
 
 a {
@@ -65,8 +65,8 @@ a {
 .brand-panel {
     padding: 48px;
     background:
-        linear-gradient(135deg, rgba(32, 58, 67, 0.95), rgba(44, 83, 100, 0.92)),
-        var(--panel-strong);
+            linear-gradient(135deg, rgba(32, 58, 67, 0.95), rgba(44, 83, 100, 0.92)),
+            var(--panel-strong);
     color: white;
 }
 
@@ -481,4 +481,54 @@ thead th {
         padding-left: 20px;
         padding-right: 20px;
     }
+}
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(44, 36, 27, 0.45);
+}
+
+.modal-card {
+    width: min(100%, 420px);
+    padding: 28px;
+    border-radius: 20px;
+    background: var(--panel);
+    box-shadow: 0 24px 60px rgba(44, 36, 27, 0.18);
+    text-align: center;
+}
+
+.modal-card h3 {
+    margin: 0 0 16px;
+}
+
+.modal-id-label {
+    margin: 0 0 8px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.modal-id-value {
+    margin: 0 0 16px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: #f5f0ea;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 18px;
+    font-weight: 700;
+    word-break: break-all;
+}
+
+.modal-hint {
+    margin: 0 0 20px;
+    color: var(--text);
+    font-weight: 600;
 }
