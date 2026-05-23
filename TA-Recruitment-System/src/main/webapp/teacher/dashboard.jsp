@@ -16,9 +16,21 @@
     List<ApplicationRecord> allApplications = DataStore.loadApplications(application);
     List<Job> jobs = new ArrayList<Job>();
     List<ApplicationRecord> applications = new ArrayList<ApplicationRecord>();
+    // Job search for teacher by title or course name
+    String jobQuery = request.getParameter("qJobs");
+    boolean filteringJobs = jobQuery != null && !jobQuery.trim().isEmpty();
+    String normalizedJobQuery = filteringJobs ? jobQuery.trim().toLowerCase() : "";
     for (Job job : allJobs) {
         if (currentUser.getId().equals(job.getTeacherId())) {
-            jobs.add(job);
+            if (filteringJobs) {
+                String title = job.getTitle() == null ? "" : job.getTitle().toLowerCase();
+                String course = job.getCourseName() == null ? "" : job.getCourseName().toLowerCase();
+                if (title.contains(normalizedJobQuery) || course.contains(normalizedJobQuery)) {
+                    jobs.add(job);
+                }
+            } else {
+                jobs.add(job);
+            }
         }
     }
     for (ApplicationRecord item : allApplications) {
@@ -93,6 +105,13 @@
         </div>
         <div class="table-card">
             <h3>My positions</h3>
+            <form class="jobs-search-bar" method="get" action="dashboard.jsp">
+                <input type="search" name="qJobs" value="<%=filteringJobs ? jobQuery.trim() : ""%>" placeholder="Search positions by title or course" aria-label="Search my positions">
+                <% if (filteringJobs) { %>
+                <a class="secondary-btn small" href="dashboard.jsp">Clear</a>
+                <% } %>
+                <button type="submit" class="primary-btn small">Search</button>
+            </form>
             <p class="subtle" style="margin-top: 0;">
                 <strong>Pause applications</strong> — position stays on the TA list, but no new applications.
                 <strong>Cancel position</strong> — withdraws the post and removes it from the TA portal (existing applications remain for your review).
