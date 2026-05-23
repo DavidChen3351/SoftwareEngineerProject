@@ -168,6 +168,7 @@
                 <th></th>
                 <th>Name</th>
                 <th>Email</th>
+                <th>ID</th>
                 <th>Student ID</th>
                 <th>Role</th>
                 <th>Status</th>
@@ -190,6 +191,7 @@
                 <td><input type="checkbox" name="selectedUserIds" value="<%=user.getId()%>"></td>
                 <td><strong><%=user.getName()%></strong></td>
                 <td><%=user.getEmail()%></td>
+                <td><%=user.getId() == null || user.getId().isEmpty() ? "-" : user.getId()%></td>
                 <td><%=user.getStudentId() == null || user.getStudentId().isEmpty() ? "-" : user.getStudentId()%></td>
                 <td><%=user.getRole()%></td>
                 <td><%=user.isEnabled() ? "Enabled" : "Disabled"%></td>
