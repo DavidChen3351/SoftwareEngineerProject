@@ -56,6 +56,23 @@ public class TeacherDecisionServlet extends HttpServlet {
         }
 
         if ("ACCEPTED".equals(status) && !"ACCEPTED".equals(target.getStatus())) {
+            // Prevent accepting when job is cancelled
+            if (ownedJob.isCancelled()) {
+                response.sendRedirect(request.getContextPath() + "/teacher/dashboard.jsp?error=Job+is+cancelled");
+                return;
+            }
+            // Prevent accepting when teacher has paused new applications
+            if (!ownedJob.isAcceptingApplications()) {
+                response.sendRedirect(request.getContextPath() + "/teacher/dashboard.jsp?error=Job+is+paused+for+new+applications");
+                return;
+            }
+            // Prevent accepting forbidden positions (e.g. 国企高管)
+            String title = ownedJob.getTitle();
+            if (title != null && title.contains("国企高管")) {
+                response.sendRedirect(request.getContextPath() + "/teacher/dashboard.jsp?error=Accepting+for+this+position+is+not+allowed");
+                return;
+            }
+            // Prevent accepting when no remaining slots
             if (ownedJob.getRemainingSlots() <= 0) {
                 response.sendRedirect(request.getContextPath() + "/teacher/dashboard.jsp?error=No+remaining+slots");
                 return;
