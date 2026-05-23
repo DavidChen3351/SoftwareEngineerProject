@@ -138,7 +138,12 @@ public class AdminUserServlet extends HttpServlet {
         target.setRole(role);
         target.setEnabled(enabled);
         if (resetPassword != null && !resetPassword.trim().isEmpty()) {
-            target.setPasswordHash(PasswordUtil.hash(resetPassword.trim()));
+            String newPass = resetPassword.trim();
+            if (!ValidationUtil.isStrongPassword(newPass)) {
+                redirectWithMessage(request, response, "/admin/dashboard.jsp", "error", "Password+is+too+weak");
+                return;
+            }
+            target.setPasswordHash(PasswordUtil.hash(newPass));
         }
 
         DataStore.saveUsers(getServletContext(), users);
@@ -160,6 +165,10 @@ public class AdminUserServlet extends HttpServlet {
         }
         if (password.isEmpty()) {
             redirectWithMessage(request, response, "/admin/dashboard.jsp", "error", "Password+is+required");
+            return;
+        }
+        if (!ValidationUtil.isStrongPassword(password)) {
+            redirectWithMessage(request, response, "/admin/dashboard.jsp", "error", "Password+is+too+weak");
             return;
         }
 
