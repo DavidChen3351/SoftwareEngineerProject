@@ -1,6 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="com.bupt.ta.model.User" %>
-<%@ page import="com.bupt.ta.model.Job" %>
 <%@ page import="com.bupt.ta.util.DataStore" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
@@ -32,7 +31,6 @@
             users.add(user);
         }
     }
-    List<Job> jobs = DataStore.loadJobs(application);
 %>
 <!DOCTYPE html>
 <html lang="en">
@@ -187,41 +185,6 @@
                         <% } %>
                     </form>
                 </td>
-            </tr>
-            <% } %>
-            </tbody>
-        </table>
-        <% } %>
-    </div>
-    <div class="table-card">
-        <h3>Manage Positions</h3>
-        <% if (jobs == null || jobs.isEmpty()) { %>
-        <p class="empty-state-message">No positions available.</p>
-        <% } else { %>
-        <table>
-            <thead>
-            <tr>
-                <th>Title</th>
-                <th>Teacher ID</th>
-                <th>Filled</th>
-                <th>Total Slots</th>
-                <th>Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            <% for (Job job : jobs) { %>
-            <tr>
-                <td><%=job.getTitle()%></td>
-                <td><%=job.getTeacherId()%></td>
-                <td><%=job.getFilledSlots()%></td>
-                <td>
-                    <form action="<%=request.getContextPath()%>/admin/jobs/quota" method="post" class="admin-form-inline">
-                        <input type="hidden" name="jobId" value="<%=job.getId()%>">
-                        <input type="number" name="totalSlots" min="1" value="<%=job.getTotalSlots()%>">
-                        <button type="submit" class="primary-btn small">Save</button>
-                    </form>
-                </td>
-                <td><%=job.isCancelled() ? "Cancelled" : (job.isAcceptingApplications() ? "Accepting" : "Paused")%></td>
             </tr>
             <% } %>
             </tbody>
