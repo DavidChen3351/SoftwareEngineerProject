@@ -5,14 +5,25 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Minimal JSON parser and serializer.
+ * Supports objects, arrays, strings, numbers, booleans and null.
+ * NOTE: This is a lightweight implementation intended for simple data structures used by the app.
+ */
 public final class JsonUtil {
     private JsonUtil() {
     }
 
+    /**
+     * Parse a JSON string into Java objects (Map for object, List for array, String/Number/Boolean/null).
+     */
     public static Object parse(String json) {
         return new Parser(json).parseValue();
     }
 
+    /**
+     * Convert a Java object (Map/List/String/Number/Boolean/null) to a JSON string.
+     */
     public static String stringify(Object value) {
         StringBuilder builder = new StringBuilder();
         writeValue(builder, value);
@@ -67,6 +78,10 @@ public final class JsonUtil {
         return value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r");
     }
 
+    /**
+     * Internal recursive-descent parser for a subset of JSON.
+     * Not fully spec-complete but adequate for the app's stored data.
+     */
     private static class Parser {
         private final String text;
         private int index;

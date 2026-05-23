@@ -18,6 +18,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Simple file-backed data access utilities.
+ * Reads and writes JSON arrays for users, jobs, and applications under a persistent data directory.
+ * Most public APIs are synchronized to provide basic thread-safety for concurrent web requests.
+ */
 public final class DataStore {
     private static final String DATA_ROOT_KEY = "com.bupt.ta.dataRoot";
     private static final String USERS_FILE = "/data/users.json";
@@ -27,6 +32,10 @@ public final class DataStore {
     private DataStore() {
     }
 
+    /**
+     * Load all users from persistent storage.
+     * Returns an empty list if none.
+     */
     public static synchronized List<User> loadUsers(ServletContext context) {
         List<Map<String, Object>> rows = readArray(context, USERS_FILE);
         List<User> users = new ArrayList<User>();
@@ -36,6 +45,9 @@ public final class DataStore {
         return users;
     }
 
+    /**
+     * Persist the given user list to storage (overwrites).
+     */
     public static synchronized void saveUsers(ServletContext context, List<User> users) {
         List<Object> rows = new ArrayList<Object>();
         for (User user : users) {
@@ -44,6 +56,9 @@ public final class DataStore {
         writeArray(context, USERS_FILE, rows);
     }
 
+    /**
+     * Load all jobs from persistent storage.
+     */
     public static synchronized List<Job> loadJobs(ServletContext context) {
         List<Map<String, Object>> rows = readArray(context, JOBS_FILE);
         List<Job> jobs = new ArrayList<Job>();
@@ -53,6 +68,9 @@ public final class DataStore {
         return jobs;
     }
 
+    /**
+     * Persist the given job list to storage (overwrites).
+     */
     public static synchronized void saveJobs(ServletContext context, List<Job> jobs) {
         List<Object> rows = new ArrayList<Object>();
         for (Job job : jobs) {
@@ -61,6 +79,9 @@ public final class DataStore {
         writeArray(context, JOBS_FILE, rows);
     }
 
+    /**
+     * Load all application records from persistent storage.
+     */
     public static synchronized List<ApplicationRecord> loadApplications(ServletContext context) {
         List<Map<String, Object>> rows = readArray(context, APPLICATIONS_FILE);
         List<ApplicationRecord> applications = new ArrayList<ApplicationRecord>();
@@ -70,6 +91,9 @@ public final class DataStore {
         return applications;
     }
 
+    /**
+     * Persist the given application records to storage (overwrites).
+     */
     public static synchronized void saveApplications(ServletContext context, List<ApplicationRecord> applications) {
         List<Object> rows = new ArrayList<Object>();
         for (ApplicationRecord application : applications) {
@@ -78,6 +102,9 @@ public final class DataStore {
         writeArray(context, APPLICATIONS_FILE, rows);
     }
 
+    /**
+     * Find a user by email (case-insensitive). Returns null if not found.
+     */
     public static User findUserByEmail(ServletContext context, String email) {
         for (User user : loadUsers(context)) {
             if (user.getEmail().equalsIgnoreCase(email)) {
@@ -87,6 +114,9 @@ public final class DataStore {
         return null;
     }
 
+    /**
+     * Find a user by studentId (case-insensitive). Returns null if not found.
+     */
     public static User findUserByStudentId(ServletContext context, String studentId) {
         for (User user : loadUsers(context)) {
             if (studentId != null && !studentId.isEmpty() && studentId.equalsIgnoreCase(user.getStudentId())) {
@@ -96,6 +126,9 @@ public final class DataStore {
         return null;
     }
 
+    /**
+     * Accepts either studentId or internal id and returns the matching user if present.
+     */
     public static User findUserByLoginId(ServletContext context, String loginId) {
         if (loginId == null || loginId.trim().isEmpty()) {
             return null;
@@ -110,6 +143,9 @@ public final class DataStore {
         return null;
     }
 
+    /**
+     * Find a job by its id. Returns null if not found.
+     */
     public static Job findJob(ServletContext context, String jobId) {
         for (Job job : loadJobs(context)) {
             if (job.getId().equals(jobId)) {
@@ -119,6 +155,9 @@ public final class DataStore {
         return null;
     }
 
+    /**
+     * Return applications that belong to the given job id.
+     */
     public static List<ApplicationRecord> findApplicationsByJob(ServletContext context, String jobId) {
         List<ApplicationRecord> matches = new ArrayList<ApplicationRecord>();
         for (ApplicationRecord application : loadApplications(context)) {
@@ -129,10 +168,17 @@ public final class DataStore {
         return matches;
     }
 
+    /**
+     * Check whether a student has applied to a job.
+     */
     public static boolean hasApplied(ServletContext context, String jobId, String studentId) {
         return findApplicationByJobAndStudent(context, jobId, studentId) != null;
     }
 
+    /**
+     * Find a single application record by job id and student id.
+     * Returns null when none found.
+     */
     public static synchronized ApplicationRecord findApplicationByJobAndStudent(ServletContext context, String jobId,
                                                                               String studentId) {
         for (ApplicationRecord application : loadApplications(context)) {
@@ -143,6 +189,9 @@ public final class DataStore {
         return null;
     }
 
+    /**
+     * Return all applications for a student sorted by submittedAt descending.
+     */
     public static synchronized List<ApplicationRecord> findApplicationsByStudent(ServletContext context,
                                                                                   String studentId) {
         List<ApplicationRecord> result = new ArrayList<ApplicationRecord>();
@@ -161,6 +210,9 @@ public final class DataStore {
         return result;
     }
 
+    /**
+     * Determine if a teacher currently has any active recruitment with open slots.
+     */
     public static boolean teacherHasActiveRecruitment(ServletContext context, String teacherId) {
         for (Job job : loadJobs(context)) {
             if (job.isCancelled()) {
@@ -188,6 +240,9 @@ public final class DataStore {
         recalculateFilledSlots(context);
     }
 
+    /**
+     * Remove all applications associated with a specific job id.
+     */
     public static synchronized void removeApplicationsForJob(ServletContext context, String jobId) {
         if (jobId == null || jobId.trim().isEmpty()) {
             return;
@@ -271,9 +326,23 @@ public final class DataStore {
         return root;
     }
 
-    /** Stable path for admin/debug; survives Tomcat restarts (including IntelliJ). */
+    /**
+     * Return the persistent data root directory used by the application.
+     * Directory is created and seeded on first access.
+     */
     public static synchronized Path getDataDirectory(ServletContext context) {
         return dataRoot(context);
+    }
+
+    /**
+     * Map of application statuses to CSS classes for UI rendering.
+     */
+    public static Map<String, String> statusClassMap() {
+        Map<String, String> classes = new LinkedHashMap<String, String>();
+        classes.put("PENDING", "status pending");
+        classes.put("ACCEPTED", "status accepted");
+        classes.put("REJECTED", "status rejected");
+        return classes;
     }
 
     private static Path resolvePersistentRoot() {
@@ -352,13 +421,5 @@ public final class DataStore {
         } catch (IOException exception) {
             throw new IllegalStateException("Failed to initialize " + path, exception);
         }
-    }
-
-    public static Map<String, String> statusClassMap() {
-        Map<String, String> classes = new LinkedHashMap<String, String>();
-        classes.put("PENDING", "status pending");
-        classes.put("ACCEPTED", "status accepted");
-        classes.put("REJECTED", "status rejected");
-        return classes;
     }
 }

@@ -4,35 +4,38 @@ import com.bupt.ta.model.User;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
+/**
+ * Session-related helpers for setting/getting current user and managing session lifecycle.
+ */
 public class SessionUtil {
     private static final String USER_SESSION_KEY = "currentUser";
 
-    // 获取当前Session
+    /** Return the current HttpSession, creating one if necessary. */
     public static HttpSession getSession(HttpServletRequest request) {
         return request.getSession();
     }
 
-    // 将用户信息存入Session（登录时调用）
+    /** Store the given user into session and set a 30-minute timeout. */
     public static void setUserToSession(HttpServletRequest request, User user) {
         HttpSession session = getSession(request);
         session.setAttribute(USER_SESSION_KEY, user);
-        // 设置Session超时时间（30分钟）
+        // session timeout: 30 minutes
         session.setMaxInactiveInterval(30 * 60);
     }
 
-    // 从Session获取当前登录用户
+    /** Retrieve the current logged-in user from session, or null if absent. */
     public static User getCurrentUser(HttpServletRequest request) {
         HttpSession session = getSession(request);
         return (User) session.getAttribute(USER_SESSION_KEY);
     }
 
-    // 清除Session（登出时调用）
+    /** Invalidate the current session (logout). */
     public static void invalidateSession(HttpServletRequest request) {
         HttpSession session = getSession(request);
         session.invalidate();
     }
 
-    // 判断用户是否已登录
+    /** Return true when a user is currently stored in session. */
     public static boolean isLoggedIn(HttpServletRequest request) {
         return getCurrentUser(request) != null;
     }
