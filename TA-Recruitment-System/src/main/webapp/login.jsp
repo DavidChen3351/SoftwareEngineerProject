@@ -34,7 +34,7 @@
                     <option value="ADMIN">Admin</option>
                 </select>
             </label>
-            <label>Username (Student/Staff ID)
+            <label>Username (ID / Student ID / Email)
                 <input type="text" name="username" required>
             </label>
             <label>Password
@@ -46,9 +46,9 @@
         <a href="<%=request.getContextPath()%>/register.jsp" class="secondary-link">Create TA account</a>
         <div class="demo-box">
             <p>Demo accounts</p>
-            <span>TA Applicant: 20230001 / 123456</span>
-            <span>MO: T1001 / 123456</span>
-            <span>Admin: A1001 / 123456</span>
+            <span>TA Applicant: 20230001 or ta1@bupt.edu.cn / 123456</span>
+            <span>MO: T1001 or teacher1@bupt.edu.cn / 123456</span>
+            <span>Admin: A1001 or admin@bupt.edu.cn / 123456</span>
         </div>
     </div>
 </div>
