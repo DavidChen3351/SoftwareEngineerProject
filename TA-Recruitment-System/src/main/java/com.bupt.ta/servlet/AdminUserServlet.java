@@ -38,7 +38,7 @@ public class AdminUserServlet extends HttpServlet {
             return;
         }
 
-        String action = safeParam(request.getParameter("action"), "update");
+        String action = resolveAction(request);
         if ("createTeacher".equals(action)) {
             createTeacher(request, response);
             return;
@@ -185,6 +185,24 @@ public class AdminUserServlet extends HttpServlet {
 
     private String safeParam(String value, String defaultValue) {
         return value == null ? defaultValue : value;
+    }
+
+    private String resolveAction(HttpServletRequest request) {
+        String[] actions = request.getParameterValues("action");
+        if (actions == null || actions.length == 0) {
+            return "update";
+        }
+        for (String action : actions) {
+            if ("delete".equals(action)) {
+                return "delete";
+            }
+        }
+        for (String action : actions) {
+            if ("batchEnable".equals(action) || "batchDisable".equals(action) || "createTeacher".equals(action)) {
+                return action;
+            }
+        }
+        return safeParam(actions[0], "update");
     }
 
     private boolean isValidRole(String role) {

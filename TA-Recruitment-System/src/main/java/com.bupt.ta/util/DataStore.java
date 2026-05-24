@@ -127,7 +127,7 @@ public final class DataStore {
     }
 
     /**
-     * Accepts either studentId or internal id and returns the matching user if present.
+     * Accepts studentId, internal id, or email and returns the matching user if present.
      */
     public static User findUserByLoginId(ServletContext context, String loginId) {
         if (loginId == null || loginId.trim().isEmpty()) {
@@ -136,7 +136,8 @@ public final class DataStore {
         String normalized = loginId.trim();
         for (User user : loadUsers(context)) {
             if (normalized.equalsIgnoreCase(user.getStudentId())
-                    || normalized.equalsIgnoreCase(user.getId())) {
+                    || normalized.equalsIgnoreCase(user.getId())
+                    || normalized.equalsIgnoreCase(user.getEmail())) {
                 return user;
             }
         }

@@ -73,6 +73,22 @@ TA_DATA_DIR
 
 Uploaded CV files are stored under the web app `uploads/` directory and referenced from application records.
 
+## Demo Accounts
+
+Default password for bundled demo accounts:
+
+```text
+123456
+```
+
+Users can log in with internal account ID, student ID, or email address. The selected login role must still match the account role.
+
+| Role | Login examples | Password |
+|------|----------------|----------|
+| TA | `U1001`, `20230001`, `ta1@bupt.edu.cn` | `123456` |
+| Teacher / MO | `T1001`, `teacher1@bupt.edu.cn` | `123456` |
+| Admin | `A1001`, `admin@bupt.edu.cn` | `123456` |
+
 ## Roles
 
 The system has three roles:
@@ -86,7 +102,7 @@ The system has three roles:
 ### Authentication and Account Rules
 
 - Role-based login for TA, Teacher and Admin.
-- Login by account ID / student ID, with selected role validation.
+- Login by account ID, student ID, or email, with selected role validation.
 - Disabled accounts cannot log in.
 - Session-based authentication using `currentUser`.
 - Logout support.

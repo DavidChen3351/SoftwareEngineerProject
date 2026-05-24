@@ -188,7 +188,13 @@
                 }
             %>
             <tr>
-                <td><input type="checkbox" name="selectedUserIds" value="<%=user.getId()%>"></td>
+                <td>
+                    <% if (isSelf) { %>
+                    <input type="checkbox" disabled title="Current admin account cannot be selected for batch actions">
+                    <% } else { %>
+                    <input type="checkbox" name="selectedUserIds" value="<%=user.getId()%>">
+                    <% } %>
+                </td>
                 <td><strong><%=user.getName()%></strong></td>
                 <td><%=user.getEmail()%></td>
                 <td><%=user.getId() == null || user.getId().isEmpty() ? "-" : user.getId()%></td>
